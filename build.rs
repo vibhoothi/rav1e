@@ -91,7 +91,7 @@ fn main() {
       build_nasm_files() 
     }
   }
-  #[cfg(feature = "asm")]
+  #[cfg(feature = "cc_asm")]
   {
     if arch == "aarch64" {
       build_asm_files()

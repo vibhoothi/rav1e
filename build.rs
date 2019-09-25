@@ -61,7 +61,7 @@ fn build_nasm_files() {
   rerun_dir("src/ext/x86");
 }
 
-#[cfg(feature = "cc_asm")]
+#[cfg(feature = "asm")]
 fn build_asm_files() {
     cc::Build::new()
         .file("src/arm/64/add.s")

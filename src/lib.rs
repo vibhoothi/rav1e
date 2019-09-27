@@ -264,6 +264,7 @@ pub mod bench {
   pub mod util {
     pub use crate::util::*;
   }
+  #[cfg(feature = "stdsimd"]
   pub mod cpu_features {
     pub use crate::cpu_features::*;
   }

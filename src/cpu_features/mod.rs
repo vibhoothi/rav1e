@@ -11,7 +11,12 @@ cfg_if::cfg_if! {
   if #[cfg(nasm_x86_64)] {
     mod x86;
     pub use x86::*;
-  } else {
+  }
+  else if #[cfg(asm_neon)] {
+    mod aarch64;
+    pub use aarch64::*;
+  }
+   else {
     mod native;
     pub use native::*;
   }

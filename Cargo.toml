@@ -14,8 +14,8 @@ autobins = false
 [features]
 decode_test = ["aom-sys"]
 decode_test_dav1d = ["dav1d-sys"]
-binaries = ["ivf", "y4m", "clap", "scan_fmt", "pretty_env_logger", "better-panic"]
-default = ["binaries", "nasm", "signal_support"]
+binaries = ["ivf", "y4m", "clap", "scan_fmt", "pretty_env_logger","better-panic"]
+default = ["binaries", "nasm","cc_asm", "signal_support"]
 nasm = ["nasm-rs"]
 signal_support = ["signal-hook"]
 dump_ivf = ["ivf"]
@@ -24,6 +24,7 @@ desync_finder = ["backtrace"]
 bench = []
 check_asm = []
 capi = []
+cc_asm = ["cc"]
 
 # Enables debug dumping of lookahead computation results, specifically:
 # - i-qres.png: quarter-resolution luma planes,
@@ -35,6 +36,7 @@ dump_lookahead_data = ["byteorder", "image"]
 [dependencies]
 arg_enum_proc_macro = "0.3"
 bitstream-io = "0.8"
+# cc = { version = "1.0", optional = true }
 clap = { version = "2", optional = true, default-features = false }
 libc = "0.2"
 y4m = { version = "0.4", optional = true }
@@ -65,6 +67,10 @@ nasm-rs = { version = "0.1", path = "crates/nasm_rs/", optional = true }
 # Vendored to remove the dependency on `failure`, which takes a long time to build.
 vergen = { version = "3", path = "crates/vergen" }
 rustc_version = "0.2"
+cc = { version = "1.0", optional = true }
+
+[target.'cfg(unix)'.build-dependencies]
+pkg-config = "0.3.12"
 
 [target.'cfg(unix)'.dependencies]
 signal-hook = { version = "0.1.9", optional = true }

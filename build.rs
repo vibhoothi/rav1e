@@ -1,11 +1,12 @@
 // build.rs
-
+#![feature(rustc_private)]
 use rustc_version::{version, Version};
 #[allow(unused_imports)]
 use std::env;
 use std::fs;
 use std::path::Path;
 use std::process::exit;
+use cc::Build;
 
 #[allow(dead_code)]
 fn rerun_dir<P: AsRef<Path>>(dir: P) {
@@ -60,6 +61,13 @@ fn build_nasm_files() {
   rerun_dir("src/ext/x86");
 }
 
+fn build_asm_files() {
+    cc::Build::new()
+        .file("src/arm/64/add.s")
+        .compile("my-asm-lib");
+
+}
+
 fn rustc_version_check() {
   // This should match the version in .travis.yml
   const REQUIRED_VERSION: &str = "1.36.0";
@@ -80,7 +88,13 @@ fn main() {
   #[cfg(feature = "nasm")]
   {
     if arch == "x86_64" {
-      build_nasm_files()
+      build_nasm_files() 
+    }
+  }
+  #[cfg(feature = "asm")]
+  {
+    if arch == "aarch64" {
+      build_asm_files()
     }
   }
 

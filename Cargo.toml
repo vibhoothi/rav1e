@@ -67,8 +67,7 @@ nasm-rs = { version = "0.1", path = "crates/nasm_rs/", optional = true }
 # Vendored to remove the dependency on `failure`, which takes a long time to build.
 vergen = { version = "3", path = "crates/vergen" }
 rustc_version = "0.2"
-cc = { version = "1.0", optional = true }
-
+cc = { version = "1.0", path = "crates/cc-rs",  optional = true }
 [target.'cfg(unix)'.build-dependencies]
 pkg-config = "0.3.12"
 

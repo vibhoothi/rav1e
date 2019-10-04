@@ -17,7 +17,7 @@ pub use native::*;
   any(target_arch = "x86", target_arch = "x86_64")
 ))]
 pub use x86::*;
-#[cfg(any(target_arch = "aarch64", target_arch = "aarch64"))]
+#[cfg(target_arch = "aarch64")]
 pub use aarch64::*;
 
 #[cfg(all(
@@ -106,7 +106,7 @@ mod aarch64 {
 
     #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, ArgEnum)]
     pub enum CpuFeatureLevel{
-        ARM_NATIVE,
+        NATIVE,
         NEON,
     }
 
@@ -128,7 +128,7 @@ mod aarch64 {
             let detected: CpuFeatureLevel = if is_aarch64_feature_detected!("neon") {
                 CpuFeatureLevel::NEON
         } else {
-            CpuFeatureLevel::ARM_NATIVE
+            CpuFeatureLevel::NATIVE
         };
         let manual: CpuFeatureLevel = match env::var("RAV1E_CPU_TARGET") {
             Ok(feature) => match feature.as_ref() {

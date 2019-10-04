@@ -12,7 +12,7 @@ use std::env;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, ArgEnum)]
 pub enum CpuFeatureLevel {
-  ARM_NATIVE,
+  NATIVE,
   NEON,
 }
 
@@ -34,7 +34,7 @@ impl Default for CpuFeatureLevel {
     let detected: CpuFeatureLevel = if is_aarch64_feature_detected!("neon") {
       CpuFeatureLevel::NEON
     } else {
-      CpuFeatureLevel::ARM_NATIVE
+      CpuFeatureLevel::NATIVE
     };
     let manual: CpuFeatureLevel = match env::var("RAV1E_CPU_TARGET") {
       Ok(feature) => match feature.as_ref() {

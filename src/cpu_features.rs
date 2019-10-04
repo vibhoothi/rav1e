@@ -117,7 +117,6 @@ mod aarch64 {
                 CpuFeatureLevel::NEON
         } else {
             CpuFeatureLevel::ARM_NATIVE
-        }
         };
         let manual: CpuFeatureLevel = match env::var("RAV1E_CPU_TARGET") {
             Ok(feature) => match feature.as_ref() {
@@ -132,5 +131,6 @@ mod aarch64 {
         } else {
             manual
         }
+    }
     }
 }

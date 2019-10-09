@@ -1,6 +1,4 @@
 // build.rs
-#![feature(rustc_private)]
-use cc::Build;
 use rustc_version::{version, Version};
 #[allow(unused_imports)]
 use std::env;

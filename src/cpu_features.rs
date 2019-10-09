@@ -10,6 +10,10 @@
 #[cfg(target_arch = "aarch64")]
 pub use aarch64::*;
 #[cfg(not(all(feature = "nasm", target_arch = "x86_64")))]
+#[cfg(not(any(
+  all(feature = "nasm", target_arch = "x86_64"),
+  target_arch = "aarch64"
+)))]
 pub use native::*;
 #[cfg(all(feature = "nasm", target_arch = "x86_64"))]
 pub use x86::*;
@@ -71,7 +75,10 @@ mod x86 {
   }
 }
 
-#[cfg(not(all(feature = "nasm", target_arch = "x86_64")))]
+#[cfg(not(any(
+  all(feature = "nasm", target_arch = "x86_64"),
+  target_arch = "aarch64"
+)))]
 mod native {
   use arg_enum_proc_macro::ArgEnum;
 
@@ -87,7 +94,7 @@ mod native {
   }
 }
 
-#[cfg(any(target_arch = "aarch64", target_arch = "aarch64"))]
+#[cfg(target_arch = "aarch64")]
 mod aarch64 {
 
   use arg_enum_proc_macro::ArgEnum;

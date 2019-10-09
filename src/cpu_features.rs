@@ -121,14 +121,10 @@ mod aarch64 {
 
   impl Default for CpuFeatureLevel {
     fn default() -> CpuFeatureLevel {
-      let detected: CpuFeatureLevel = if is_aarch64_feature_detected!("neon") {
-        CpuFeatureLevel::NEON
-      } else {
-        CpuFeatureLevel::NATIVE
-      };
+      let detected = CpuFeatureLevel::NATIVE;
       let manual: CpuFeatureLevel = match env::var("RAV1E_CPU_TARGET") {
         Ok(feature) => match feature.as_ref() {
-          "rust" => CpuFeatureLevel::ARM_NATIVE,
+          "rust" => CpuFeatureLevel::NATIVE,
           "neon" => CpuFeatureLevel::NEON,
           _ => detected,
         },

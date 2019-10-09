@@ -7,6 +7,8 @@
 // Media Patent License 1.0 was not distributed with this source code in the
 // PATENTS file, you can obtain it at www.aomedia.org/license/patent.
 
+#[cfg(target_arch = "aarch64")]
+pub use aarch64::*;
 #[cfg(not(all(
   feature = "nasm",
   any(target_arch = "x86", target_arch = "x86_64")
@@ -17,8 +19,6 @@ pub use native::*;
   any(target_arch = "x86", target_arch = "x86_64")
 ))]
 pub use x86::*;
-#[cfg(target_arch = "aarch64")]
-pub use aarch64::*;
 
 #[cfg(all(
   feature = "nasm",
@@ -101,48 +101,48 @@ mod native {
 #[cfg(any(target_arch = "aarch64", target_arch = "aarch64"))]
 mod aarch64 {
 
-    use arg_enum_proc_macro::ArgEnum;
-    use std::env;
+  use arg_enum_proc_macro::ArgEnum;
+  use std::env;
 
-    #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, ArgEnum)]
-    pub enum CpuFeatureLevel{
-        NATIVE,
-        NEON,
+  #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, ArgEnum)]
+  pub enum CpuFeatureLevel {
+    NATIVE,
+    NEON,
+  }
+
+  impl CpuFeatureLevel {
+    pub const fn len() -> usize {
+      CpuFeatureLevel::NEON as usize + 1
     }
-
-    impl CpuFeatureLevel {
-        pub const fn len() -> usize {
-            CpuFeatureLevel::NEON as usize + 1
-        }
 
     #[inline(always)]
     pub fn as_index(self) -> usize {
-        const LEN: usize = CpuFeatureLevel::len();
-        assert_eq!(LEN & (LEN -1), 0);
-        self as usize & (LEN -1)
+      const LEN: usize = CpuFeatureLevel::len();
+      assert_eq!(LEN & (LEN - 1), 0);
+      self as usize & (LEN - 1)
+    }
+  }
+
+  impl Default for CpuFeatureLevel {
+    fn default() -> CpuFeatureLevel {
+      let detected: CpuFeatureLevel = if is_aarch64_feature_detected!("neon") {
+        CpuFeatureLevel::NEON
+      } else {
+        CpuFeatureLevel::NATIVE
+      };
+      let manual: CpuFeatureLevel = match env::var("RAV1E_CPU_TARGET") {
+        Ok(feature) => match feature.as_ref() {
+          "rust" => CpuFeatureLevel::ARM_NATIVE,
+          "neon" => CpuFeatureLevel::NEON,
+          _ => detected,
+        },
+        Err(_e) => detected,
+      };
+      if manual > detected {
+        detected
+      } else {
+        manual
       }
     }
-
-    impl Default for CpuFeatureLevel {
-        fn default() -> CpuFeatureLevel {
-            let detected: CpuFeatureLevel = if is_aarch64_feature_detected!("neon") {
-                CpuFeatureLevel::NEON
-        } else {
-            CpuFeatureLevel::NATIVE
-        };
-        let manual: CpuFeatureLevel = match env::var("RAV1E_CPU_TARGET") {
-            Ok(feature) => match feature.as_ref() {
-                "rust" => CpuFeatureLevel::ARM_NATIVE,
-                "neon" => CpuFeatureLevel::NEON,
-                _ => detected,
-            },
-            Err(_e) => detected,
-        };
-        if manual > detected {
-            detected
-        } else {
-            manual
-        }
-    }
-    }
+  }
 }

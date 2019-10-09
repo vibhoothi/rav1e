@@ -1,12 +1,12 @@
 // build.rs
 #![feature(rustc_private)]
+use cc::Build;
 use rustc_version::{version, Version};
 #[allow(unused_imports)]
 use std::env;
 use std::fs;
 use std::path::Path;
 use std::process::exit;
-use cc::Build;
 
 #[allow(dead_code)]
 fn rerun_dir<P: AsRef<Path>>(dir: P) {
@@ -63,10 +63,7 @@ fn build_nasm_files() {
 
 #[cfg(feature = "asm")]
 fn build_asm_files() {
-    cc::Build::new()
-        .file("src/arm/64/add.s")
-        .compile("my-asm-lib");
-
+  cc::Build::new().file("src/arm/64/add.s").compile("my-asm-lib");
 }
 
 fn rustc_version_check() {
@@ -89,7 +86,7 @@ fn main() {
   #[cfg(feature = "nasm")]
   {
     if arch == "x86_64" {
-      build_nasm_files() 
+      build_nasm_files()
     }
   }
   #[cfg(feature = "asm")]

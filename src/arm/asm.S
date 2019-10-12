@@ -25,10 +25,14 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef __DAV1D_SRC_ARM_ASM_S__
-#define __DAV1D_SRC_ARM_ASM_S__
+#ifndef __RAV1E_SRC_ARM_ASM_S__
+#define __RAV1E_SRC_ARM_ASM_S__
 
-#include "config.h"
+// have only AArch64 for now
+#define ARCH_AARCH64 1
+#define ARCH_ARM 0
+#define CONFIG_LOG 1 
+#define HAVE_ASM 1 
 
 #if ARCH_ARM
     .syntax unified
@@ -131,4 +135,4 @@ EXTERN\name:
 
 #define X(x) CONCAT(EXTERN, x)
 
-#endif /* __DAV1D_SRC_ARM_ASM_S__ */
+#endif /* __RAV1E_SRC_ARM_ASM_S__ */

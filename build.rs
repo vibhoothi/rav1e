@@ -62,6 +62,7 @@ fn build_nasm_files() {
 #[cfg(feature = "asm")]
 fn build_asm_files() {
   cc::Build::new().file("src/arm/64/add.s").compile("my-asm-lib");
+  cc::Build::new().file("src/arm/asm.S").compile("asm-s");
 }
 
 fn rustc_version_check() {

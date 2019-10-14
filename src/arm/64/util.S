@@ -26,10 +26,15 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *****************************************************************************/
 
-#ifndef __DAVID_SRC_ARM_64_UTIL_S__
-#define __DAVID_SRC_ARM_64_UTIL_S__
+#ifndef __RAV1E_SRC_ARM_64_UTIL_S__
+#define __RAV1E_SRC_ARM_64_UTIL_S__
 
-#include "config.h"
+// Have AArch64 configurations 
+#define ARCH_AARCH64 1
+#define ARCH_ARM 0
+#define CONFIG_LOG 1
+#define HAVE_ASM 1
+
 #include "src/arm/asm.S"
 
 .macro  movrel rd, val, offset=0
@@ -59,4 +64,4 @@
 #endif
 .endm
 
-#endif /* __DAVID_SRC_ARM_64_UTIL_S__ */
+#endif /* __RAV1E_SRC_ARM_64_UTIL_S__ */

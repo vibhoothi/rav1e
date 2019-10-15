@@ -61,12 +61,14 @@ fn build_nasm_files() {
 
 #[cfg(feature = "asm")]
 fn build_asm_files() {
-  cc::Build::new().file("src/arm/64/add.s").compile("my-asm-lib");
-  cc::Build::new().file("src/arm/asm.S").compile("asm-s");
-  cc::Build::new().file("src/arm/64/util.S").include(".").define("PRIVATE_PREFIX", "rav1e_").compile("util-s");
-  cc::Build::new().file("src/arm/64/mc.S").include(".").define("PRIVATE_PREFIX", "rav1e_").compile("mc-s");
-  cc::Build::new().file("src/arm/64/data.S").include(".").define("PRIVATE_PREFIX","rav1e_").compile("data-s");
-}
+    cc::Build::new().files(&[
+                          "src/arm/64/add.s",
+                          "src/arm/asm.S",
+                          "src/arm/64/util.S",
+                          "src/arm/64/mc.S",
+                          "src/arm/64/data.S",
+    ]).include(".").define("PRIVATE_PREFIX","rav1e_").compile("rav1e-aarch64");
+  }
 
 fn rustc_version_check() {
   // This should match the version in .travis.yml

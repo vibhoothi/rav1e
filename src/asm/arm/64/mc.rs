@@ -272,7 +272,7 @@ macro_rules! decl_mc_fns {
       )*
     }
 
-    static PUT_FNS_AVX2: [Option<PutFn>; 16] = {
+    static PUT_FNS_NEON: [Option<PutFn>; 16] = {
       let mut out: [Option<PutFn>; 16] = [None; 16];
       $(
         out[get_2d_mode_idx($mode_x, $mode_y)] = Some($func_name);
@@ -283,21 +283,21 @@ macro_rules! decl_mc_fns {
 }
 
 decl_mc_fns!(
-  (REGULAR, REGULAR, rav1e_put_8tap_regular_avx2),
-  (REGULAR, SMOOTH, rav1e_put_8tap_regular_smooth_avx2),
-  (REGULAR, SHARP, rav1e_put_8tap_regular_sharp_avx2),
-  (SMOOTH, REGULAR, rav1e_put_8tap_smooth_regular_avx2),
-  (SMOOTH, SMOOTH, rav1e_put_8tap_smooth_avx2),
-  (SMOOTH, SHARP, rav1e_put_8tap_smooth_sharp_avx2),
-  (SHARP, REGULAR, rav1e_put_8tap_sharp_regular_avx2),
-  (SHARP, SMOOTH, rav1e_put_8tap_sharp_smooth_avx2),
-  (SHARP, SHARP, rav1e_put_8tap_sharp_avx2),
-  (BILINEAR, BILINEAR, rav1e_put_bilin_avx2)
+  (REGULAR, REGULAR, rav1e_put_8tap_regular_neon),
+  (REGULAR, SMOOTH, rav1e_put_8tap_regular_smooth_neon),
+  (REGULAR, SHARP, rav1e_put_8tap_regular_sharp_neon),
+  (SMOOTH, REGULAR, rav1e_put_8tap_smooth_regular_neon),
+  (SMOOTH, SMOOTH, rav1e_put_8tap_smooth_neon),
+  (SMOOTH, SHARP, rav1e_put_8tap_smooth_sharp_neon),
+  (SHARP, REGULAR, rav1e_put_8tap_sharp_regular_neon),
+  (SHARP, SMOOTH, rav1e_put_8tap_sharp_smooth_neon),
+  (SHARP, SHARP, rav1e_put_8tap_sharp_neon),
+  (BILINEAR, BILINEAR, rav1e_put_bilin_neon)
 );
 
 pub(crate) static PUT_FNS: [[Option<PutFn>; 16]; CpuFeatureLevel::len()] = {
   let mut out = [[None; 16]; CpuFeatureLevel::len()];
-  out[CpuFeatureLevel::AVX2 as usize] = PUT_FNS_AVX2;
+  out[CpuFeatureLevel::NEON as usize] = PUT_FNS_NEON;
   out
 };
 
@@ -315,7 +315,7 @@ macro_rules! decl_mct_fns {
       )*
     }
 
-    static PREP_FNS_AVX2: [Option<PrepFn>; 16] = {
+    static PREP_FNS_NEON: [Option<PrepFn>; 16] = {
       let mut out: [Option<PrepFn>; 16] = [None; 16];
       $(
         out[get_2d_mode_idx($mode_x, $mode_y)] = Some($func_name);
@@ -326,21 +326,21 @@ macro_rules! decl_mct_fns {
 }
 
 decl_mct_fns!(
-  (REGULAR, REGULAR, rav1e_prep_8tap_regular_avx2),
-  (REGULAR, SMOOTH, rav1e_prep_8tap_regular_smooth_avx2),
-  (REGULAR, SHARP, rav1e_prep_8tap_regular_sharp_avx2),
-  (SMOOTH, REGULAR, rav1e_prep_8tap_smooth_regular_avx2),
-  (SMOOTH, SMOOTH, rav1e_prep_8tap_smooth_avx2),
-  (SMOOTH, SHARP, rav1e_prep_8tap_smooth_sharp_avx2),
-  (SHARP, REGULAR, rav1e_prep_8tap_sharp_regular_avx2),
-  (SHARP, SMOOTH, rav1e_prep_8tap_sharp_smooth_avx2),
-  (SHARP, SHARP, rav1e_prep_8tap_sharp_avx2),
-  (BILINEAR, BILINEAR, rav1e_prep_bilin_avx2)
+  (REGULAR, REGULAR, rav1e_prep_8tap_regular_neon),
+  (REGULAR, SMOOTH, rav1e_prep_8tap_regular_smooth_neon),
+  (REGULAR, SHARP, rav1e_prep_8tap_regular_sharp_neon),
+  (SMOOTH, REGULAR, rav1e_prep_8tap_smooth_regular_neon),
+  (SMOOTH, SMOOTH, rav1e_prep_8tap_smooth_neon),
+  (SMOOTH, SHARP, rav1e_prep_8tap_smooth_sharp_neon),
+  (SHARP, REGULAR, rav1e_prep_8tap_sharp_regular_neon),
+  (SHARP, SMOOTH, rav1e_prep_8tap_sharp_smooth_neon),
+  (SHARP, SHARP, rav1e_prep_8tap_sharp_neon),
+  (BILINEAR, BILINEAR, rav1e_prep_bilin_neon)
 );
 
 pub(crate) static PREP_FNS: [[Option<PrepFn>; 16]; CpuFeatureLevel::len()] = {
   let mut out = [[None; 16]; CpuFeatureLevel::len()];
-  out[CpuFeatureLevel::AVX2 as usize] = PREP_FNS_AVX2;
+  out[CpuFeatureLevel::NEON as usize] = PREP_FNS_NEON;
   out
 };
 
@@ -348,12 +348,7 @@ pub(crate) static PREP_HBD_FNS: [[Option<PrepHBDFn>; 16];
   CpuFeatureLevel::len()] = [[None; 16]; CpuFeatureLevel::len()];
 
 extern {
-  fn rav1e_avg_ssse3(
-    dst: *mut u8, dst_stride: libc::ptrdiff_t, tmp1: *const i16,
-    tmp2: *const i16, w: i32, h: i32,
-  );
-
-  fn rav1e_avg_avx2(
+  fn rav1e_avg_neon(
     dst: *mut u8, dst_stride: libc::ptrdiff_t, tmp1: *const i16,
     tmp2: *const i16, w: i32, h: i32,
   );
@@ -362,8 +357,7 @@ extern {
 pub(crate) static AVG_FNS: [Option<AvgFn>; CpuFeatureLevel::len()] = {
   let mut out: [Option<AvgFn>; CpuFeatureLevel::len()] =
     [None; CpuFeatureLevel::len()];
-  out[CpuFeatureLevel::SSSE3 as usize] = Some(rav1e_avg_ssse3);
-  out[CpuFeatureLevel::AVX2 as usize] = Some(rav1e_avg_avx2);
+  out[CpuFeatureLevel::NEON as usize] = Some(rav1e_avg_neon);
   out
 };
 

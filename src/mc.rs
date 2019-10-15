@@ -12,7 +12,7 @@ pub use self::native::*;
 #[cfg(all(feature = "nasm", target_arch = "x86_64"))]
 pub use crate::asm::x86::mc::*;
 #[cfg(all(feature = "asm", target_arch = "aarch64"))]
-pub use crate::asm::arm::mc::*;
+pub use crate::asm::aarch64::mc::*;
 
 use crate::cpu_features::CpuFeatureLevel;
 use crate::frame::*;

@@ -10,5 +10,5 @@
 #[cfg(nasm_x86_64)]
 pub mod x86;
 
-#[cfg(all(features = "asm", target_arch = "aarch64"))]
+#[cfg(all(feature = "asm", target_arch = "aarch64"))]
 pub mod aarch64;

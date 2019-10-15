@@ -63,8 +63,8 @@ fn build_nasm_files() {
 fn build_asm_files() {
   cc::Build::new().file("src/arm/64/add.s").compile("my-asm-lib");
   cc::Build::new().file("src/arm/asm.S").compile("asm-s");
-  cc::Build::new().file("src/arm/64/util.S").include(".").compile("util-s");
-  cc::Build::new().file("src/arm/64/mc.S").include(".").compile("mc-s");
+  cc::Build::new().file("src/arm/64/util.S").include(".").define("PRIVATE_PREFIX", "rav1e_").compile("util-s");
+  cc::Build::new().file("src/arm/64/mc.S").include(".").define("PRIVATE_PREFIX", "rav1e_").compile("mc-s");
 }
 
 fn rustc_version_check() {

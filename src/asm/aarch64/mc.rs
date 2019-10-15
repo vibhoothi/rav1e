@@ -283,15 +283,15 @@ macro_rules! decl_mc_fns {
 }
 
 decl_mc_fns!(
-  (REGULAR, REGULAR, rav1e_put_8tap_regular_neon),
-  (REGULAR, SMOOTH, rav1e_put_8tap_regular_smooth_neon),
-  (REGULAR, SHARP, rav1e_put_8tap_regular_sharp_neon),
-  (SMOOTH, REGULAR, rav1e_put_8tap_smooth_regular_neon),
-  (SMOOTH, SMOOTH, rav1e_put_8tap_smooth_neon),
-  (SMOOTH, SHARP, rav1e_put_8tap_smooth_sharp_neon),
-  (SHARP, REGULAR, rav1e_put_8tap_sharp_regular_neon),
-  (SHARP, SMOOTH, rav1e_put_8tap_sharp_smooth_neon),
-  (SHARP, SHARP, rav1e_put_8tap_sharp_neon),
+  (REGULAR, REGULAR, rav1e_put_8tap_regular_8bpc_neon),
+  (REGULAR, SMOOTH, rav1e_put_8tap_regular_smooth_8bpc_neon),
+  (REGULAR, SHARP, rav1e_put_8tap_regular_sharp_8bpc_neon),
+  (SMOOTH, REGULAR, rav1e_put_8tap_smooth_regular_8bpc_neon),
+  (SMOOTH, SMOOTH, rav1e_put_8tap_smooth_8bpc_neon),
+  (SMOOTH, SHARP, rav1e_put_8tap_smooth_sharp_8bpc_neon),
+  (SHARP, REGULAR, rav1e_put_8tap_sharp_regular_8bpc_neon),
+  (SHARP, SMOOTH, rav1e_put_8tap_sharp_smooth_8bpc_neon),
+  (SHARP, SHARP, rav1e_put_8tap_sharp_8bpc_neon),
   (BILINEAR, BILINEAR, rav1e_put_bilin_neon)
 );
 
@@ -326,16 +326,16 @@ macro_rules! decl_mct_fns {
 }
 
 decl_mct_fns!(
-  (REGULAR, REGULAR, rav1e_prep_8tap_regular_neon),
-  (REGULAR, SMOOTH, rav1e_prep_8tap_regular_smooth_neon),
-  (REGULAR, SHARP, rav1e_prep_8tap_regular_sharp_neon),
-  (SMOOTH, REGULAR, rav1e_prep_8tap_smooth_regular_neon),
-  (SMOOTH, SMOOTH, rav1e_prep_8tap_smooth_neon),
-  (SMOOTH, SHARP, rav1e_prep_8tap_smooth_sharp_neon),
-  (SHARP, REGULAR, rav1e_prep_8tap_sharp_regular_neon),
-  (SHARP, SMOOTH, rav1e_prep_8tap_sharp_smooth_neon),
-  (SHARP, SHARP, rav1e_prep_8tap_sharp_neon),
-  (BILINEAR, BILINEAR, rav1e_prep_bilin_neon)
+  (REGULAR, REGULAR, rav1e_prep_8tap_regular_8bpc_neon),
+  (REGULAR, SMOOTH, rav1e_prep_8tap_regular_smooth_8bpc_neon),
+  (REGULAR, SHARP, rav1e_prep_8tap_regular_sharp_8bpc_neon),
+  (SMOOTH, REGULAR, rav1e_prep_8tap_smooth_regular_8bpc_neon),
+  (SMOOTH, SMOOTH, rav1e_prep_8tap_smooth_8bpc_neon),
+  (SMOOTH, SHARP, rav1e_prep_8tap_smooth_sharp_8bpc_neon),
+  (SHARP, REGULAR, rav1e_prep_8tap_sharp_regular_8bpc_neon),
+  (SHARP, SMOOTH, rav1e_prep_8tap_sharp_smooth_8bpc_neon),
+  (SHARP, SHARP, rav1e_prep_8tap_sharp_8bpc_neon),
+  (BILINEAR, BILINEAR, rav1e_prep_bilin_8bpc_neon)
 );
 
 pub(crate) static PREP_FNS: [[Option<PrepFn>; 16]; CpuFeatureLevel::len()] = {

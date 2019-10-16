@@ -364,7 +364,6 @@ pub(crate) static AVG_FNS: [Option<AvgFn>; CpuFeatureLevel::len()] = {
 pub(crate) static AVG_HBD_FNS: [Option<AvgHBDFn>; CpuFeatureLevel::len()] =
   [None; CpuFeatureLevel::len()];
 
-
 #[rustfmt::skip]
 static MC_SUBPEL_FILTERS: AlignedArray<[i16; 600]> = AlignedArray::new([
 0,   1,  -3,  63,   4,  -1,   0,   0, //REGULAR

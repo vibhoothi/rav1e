@@ -292,7 +292,7 @@ decl_mc_fns!(
   (SHARP, REGULAR, rav1e_put_8tap_sharp_regular_8bpc_neon),
   (SHARP, SMOOTH, rav1e_put_8tap_sharp_smooth_8bpc_neon),
   (SHARP, SHARP, rav1e_put_8tap_sharp_8bpc_neon),
-  (BILINEAR, BILINEAR, rav1e_put_bilin_neon)
+  (BILINEAR, BILINEAR, rav1e_put_bilin_8bpc_neon)
 );
 
 pub(crate) static PUT_FNS: [[Option<PutFn>; 16]; CpuFeatureLevel::len()] = {
@@ -348,7 +348,7 @@ pub(crate) static PREP_HBD_FNS: [[Option<PrepHBDFn>; 16];
   CpuFeatureLevel::len()] = [[None; 16]; CpuFeatureLevel::len()];
 
 extern {
-  fn rav1e_avg_neon(
+  fn rav1e_avg_8bpc_neon(
     dst: *mut u8, dst_stride: libc::ptrdiff_t, tmp1: *const i16,
     tmp2: *const i16, w: i32, h: i32,
   );
@@ -357,7 +357,7 @@ extern {
 pub(crate) static AVG_FNS: [Option<AvgFn>; CpuFeatureLevel::len()] = {
   let mut out: [Option<AvgFn>; CpuFeatureLevel::len()] =
     [None; CpuFeatureLevel::len()];
-  out[CpuFeatureLevel::NEON as usize] = Some(rav1e_avg_neon);
+  out[CpuFeatureLevel::NEON as usize] = Some(rav1e_avg_8bpc_neon);
   out
 };
 

@@ -63,13 +63,17 @@ fn build_nasm_files() {
 
 #[cfg(feature = "asm")]
 fn build_asm_files() {
-    cc::Build::new().files(&[
-                          "src/arm/64/add.s",
-                          "src/arm/asm.S",
-                          "src/arm/64/util.S",
-                          "src/arm/64/mc.S",
-    ]).include(".").define("PRIVATE_PREFIX","rav1e_").compile("rav1e-aarch64");
-  }
+  cc::Build::new()
+    .files(&[
+      "src/arm/64/add.s",
+      "src/arm/asm.S",
+      "src/arm/64/util.S",
+      "src/arm/64/mc.S",
+    ])
+    .include(".")
+    .define("PRIVATE_PREFIX", "rav1e_")
+    .compile("rav1e-aarch64");
+}
 
 fn rustc_version_check() {
   // This should match the version in .travis.yml
@@ -100,7 +104,6 @@ fn main() {
     }
   }
 
- 
   if os == "windows" && cfg!(feature = "decode_test") {
     panic!("Unsupported feature on this platform!");
   }
@@ -108,4 +111,3 @@ fn main() {
   vergen::generate_cargo_keys(vergen::ConstantsFlags::all())
     .expect("Unable to generate the cargo keys!");
 }
-

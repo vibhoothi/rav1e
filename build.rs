@@ -68,7 +68,6 @@ fn build_asm_files() {
                           "src/arm/asm.S",
                           "src/arm/64/util.S",
                           "src/arm/64/mc.S",
-                          "src/arm/64/data.S",
     ]).include(".").define("PRIVATE_PREFIX","rav1e_").compile("rav1e-aarch64");
   }
 

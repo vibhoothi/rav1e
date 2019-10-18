@@ -7,10 +7,10 @@
 // Media Patent License 1.0 was not distributed with this source code in the
 // PATENTS file, you can obtain it at www.aomedia.org/license/patent.
 
-#[cfg(nasm_x86_64)]
-pub mod x86;
-
-#[cfg(asm_neon)]
-pub mod aarch64;
-
-pub mod tables;
+pub mod cdef;
+pub mod dist;
+pub mod ec;
+pub mod lrf;
+pub mod mc;
+pub mod predict;
+pub mod transform;

@@ -105,6 +105,7 @@ pub unsafe fn cdef_filter_block<T: Pixel>(
       }
     }
   }
+  /*
   #[cfg(feature = "check_asm")]
   {
     for (dst_row, ref_row) in
@@ -115,6 +116,7 @@ pub unsafe fn cdef_filter_block<T: Pixel>(
       }
     }
   }
+  */
 }
 
 extern {
@@ -130,12 +132,18 @@ extern {
 
 macro_rules! decl_cdef_fn {
   ($(($mode_x:literal, $mode_y:literal, $W:literal, $H:literal)),+) => {
-        $(
+      
+    $(
           paste::item! {
             extern fn [<rav1e_cdef_filter_$W x$H _neon>](
               dst: *mut u8, dst_stride: isize, tmp: *const u16, _tmp_stride: isize,
                pri_strength: i32, sec_strength: i32, dir: i32, damping: i32,
             ) {
+              if $W == 8 {
+                assert_eq!(tmp_stride,96);
+              } else {
+                assert_eq!(tmp_stride, 64);
+              }
               unsafe {
                 [<rav1e_cdef_filter$W _neon>](dst, dst_stride, tmp, pri_strength, sec_strength, dir, damping, $H);
               }

@@ -390,12 +390,12 @@ function cdef_filter\w\()_neon, export=1
         smax            v0.8h,  v0.8h,  v2.8h       // iclip(px + .., min, max)
         xtn             v0.8b,  v0.8h
 .if \w == 8
-        add             x2,  x2,  #2*16             // tmp += tmp_stride
+        add             x2,  x2,  #2*96             // tmp += tmp_stride
         subs            w7,  w7,  #1                // h--
         st1             {v0.8b}, [x0], x1
 .else
         st1             {v0.s}[0], [x0], x1
-        add             x2,  x2,  #2*16             // tmp += 2*tmp_stride
+        add             x2,  x2,  #2*64             // tmp += 2*tmp_stride
         subs            w7,  w7,  #2                // h -= 2
         st1             {v0.s}[1], [x0], x1
 .endif

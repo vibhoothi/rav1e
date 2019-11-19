@@ -136,7 +136,7 @@ macro_rules! decl_cdef_fn {
     $(
           paste::item! {
             extern fn [<rav1e_cdef_filter_$W x$H _neon>](
-              dst: *mut u8, dst_stride: isize, tmp: *const u16, _tmp_stride: isize,
+              dst: *mut u8, dst_stride: isize, tmp: *const u16, tmp_stride: isize,
                pri_strength: i32, sec_strength: i32, dir: i32, damping: i32,
             ) {
               if $W == 8 {

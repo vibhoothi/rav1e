@@ -20,6 +20,7 @@ use crate::partition::BlockSize;
 use crate::serialize::{Deserialize, Serialize};
 use crate::tiling::TilingInfo;
 use crate::util::Pixel;
+use crate::metrics::MetricsEnabled;
 
 use std::fmt;
 
@@ -114,6 +115,9 @@ pub struct EncoderConfig {
   /// [`Packet`]: struct.Packet.html#structfield.psnr
   pub show_psnr: bool,
 
+  /// If enabled, computes various metrics
+  pub metrics_enabled: MetricsEnabled,
+
   /// Settings which affect the enconding speed vs. quality trade-off.
   pub speed_settings: SpeedSettings,
 }
@@ -172,6 +176,7 @@ impl EncoderConfig {
       rdo_lookahead_frames: 40,
       speed_settings: SpeedSettings::from_preset(speed),
       show_psnr: false,
+      metrics_enabled: MetricsEnabled::None,
     }
   }
 

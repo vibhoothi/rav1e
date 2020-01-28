@@ -327,6 +327,11 @@ pub fn parse_cli() -> Result<CliOptions, CliError> {
         .help("Calculate and display PSNR metrics")
         .long("psnr")
     )
+    .arg{
+      Arg::with_name("METRICS")
+        .help(" Calculate and display various Metrics like PSNR, PSNR_HVS, SSIM, CIEDE2000")
+        .long("metrics")
+    }
     .arg(
       Arg::with_name("RECONSTRUCTION")
         .help("Outputs a Y4M file containing the output from the decoder")
@@ -612,6 +617,13 @@ fn parse_config(matches: &ArgMatches<'_>) -> Result<EncoderConfig, CliError> {
   cfg.rdo_lookahead_frames =
     matches.value_of("RDO_LOOKAHEAD_FRAMES").unwrap_or("40").parse().unwrap();
   cfg.show_psnr = matches.is_present("PSNR");
+  cfg.metrics_enabled = if matches.is_present("METRICS") {
+    MetricsEnabled::All
+  } else if matches.is_present("PSNR") {
+    MetricsEnabled::Psnr
+  } else {
+    MetricsEnabled::None
+  };
   cfg.tune = matches.value_of("TUNE").unwrap().parse().unwrap();
 
   if cfg.tune == Tune::Psychovisual {

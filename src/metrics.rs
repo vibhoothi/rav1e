@@ -10,6 +10,8 @@
 use crate::frame::Frame;
 use crate::frame::Plane;
 use crate::util::{CastFromPrimitive, Pixel};
+use av_metrics::video::*;
+//{ciede, psnr, psnr_hvs, ssim, FrameInfo, PlanarMetrics, PlaneData, ChromaSampling};
 
 /// Calculates the PSNR for a `Frame` by comparing the original (uncompressed) to the compressed
 /// version of the frame. Higher PSNR is better--PSNR is capped at 100 in order to avoid skewed
@@ -63,4 +65,78 @@ fn calculate_plane_mse<T: Pixel>(
     .map(|err| err * err)
     .sum::<u64>() as f64
     / (original.cfg.width * original.cfg.height) as f64
+}
+
+#[derive(Debug, Clone, Copy, Default)]
+pub struct QualityMetrics {
+  /// Peak Signal-to-Noise Ratio for Y, U, and V planes
+  pub psnr: Option<PlanarMetrics>,
+  /// Peak Signal-to-Noise Ratio as perceived by the Human Visual System--
+  /// taking into account Contrast Sensitivity Function (CSF)
+  pub psnr_hvs: Option<PlanarMetrics>,
+  /// Structural Similarity
+  pub ssim: Option<PlanarMetrics>,
+  /// Multi-Scale Structural Similarity
+  pub ms_ssim: Option<PlanarMetrics>,
+  /// CIEDE 2000 color difference algorithm: https://en.wikipedia.org/wiki/Color_difference#CIEDE2000
+  pub ciede: Option<f64>,
+  /// Aligned Peak Signal-to-Noise Ratio for Y, U, and V planes
+  pub apsnr: Option<PlanarMetrics>,
+  /// Netflix's Video Multimethod Assessment Fusion
+  pub vmaf: Option<f64>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum MetricsEnabled {
+  /// Don't calculate any metrics.
+  None,
+  /// Calculate the PSNR of each plane, but no other metrics.
+  Psnr,
+  /// Calculate all implemented metrics. Currently implemented metrics match what is available via AWCY.
+  All,
+}
+
+pub fn calculate_frame_metrics<T: Pixel>(
+  frame1: &Frame<T>, frame2: &Frame<T>, bit_depth: usize, cs: ChromaSampling,
+  metrics: MetricsEnabled,
+) -> QualityMetrics {
+
+  #[derive(Clone, Debug)]
+  let frame1_info = FrameInfo{
+    planes: &frame1.planeData,
+    bit_depth: bit_depth,
+    chroma_sampling: cs,
+  };
+  
+  let frame2_info = FrameInfo{
+    planes: frame2.planes[0],
+    bit_depth: bit_depth,
+    chroma_sampling: cs,
+  };
+
+  match metrics {
+    MetricsEnabled::None => QualityMetrics::default(),
+    MetricsEnabled::Psnr => {
+      let mut metrics = QualityMetrics::default();
+      metrics.psnr =
+        Some(psnr::calculate_frame_psnr(frame1_info, frame2_info));
+      metrics
+    }
+    MetricsEnabled::All => {
+      let mut metrics = QualityMetrics::default();
+      metrics.psnr =
+        Some(psnr::calculate_frame_psnr(frame1_info, frame2_info));
+      metrics.psnr_hvs = Some(psnr_hvs::calculate_frame_psnr_hvs(
+        frame1_info, frame2_info
+      ));
+      let ssim = ssim::calculate_frame_ssim(frame1_info, frame2_info);
+      metrics.ssim = Some(ssim);
+      let ms_ssim =
+        ssim::calculate_frame_msssim(frame1_info, frame2_info);
+      metrics.ms_ssim = Some(ms_ssim);
+      let ciede = ciede::calculate_frame_ciede(frame1_info, frame2_info);
+      metrics.ciede = Some(ciede);
+      metrics
+    }
+  }
 }

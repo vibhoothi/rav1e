@@ -97,15 +97,27 @@ pub enum MetricsEnabled {
 }
 
 #[derive(Clone)]
-pub struct PlaneData {
-    pub width: usize,
-    pub height: usize,
-    pub data: Vec<u8>,
+struct PlaneData {
+    width: usize,
+    height: usize,
+    data: Vec<u8>,
 }
 
 impl <T>From<&av_metrics::video::PlaneData<T>> for PlaneData 
   where T: av_metrics::video::pixel::Pixel {
   fn from(_frame: &av_metrics::video::PlaneData<T>) -> Self {
+      PlaneData {
+        width: _frame.width,
+        height: _frame.height,
+        data: _frame.data,
+      }
+    }
+  }
+
+  /// TO-DO Fix broken since the PlaneData for both is different 
+ impl <T>From<&PlaneData> for av_metrics::video::PlaneData<T>
+  where T: av_metrics::video::pixel::Pixel {
+  fn from(_frame: &PlaneData) -> Self {
       PlaneData {
         width: _frame.width,
         height: _frame.height,
@@ -121,13 +133,13 @@ pub fn calculate_frame_metrics<T: Pixel>(
 
   #[derive(Clone, Debug)]
   let frame1_info = FrameInfo{
-    planes: frame1.planeData,
+    planes: frame1.PlaneData,
     bit_depth: bit_depth,
     chroma_sampling: cs,
   };
   
   let frame2_info = FrameInfo{
-    planes: &frame2.planes[0],
+    planes: &frame2.PlaneData,
     bit_depth: bit_depth,
     chroma_sampling: cs,
   };
@@ -137,23 +149,23 @@ pub fn calculate_frame_metrics<T: Pixel>(
     MetricsEnabled::Psnr => {
       let mut metrics = QualityMetrics::default();
       metrics.psnr =
-        Some(psnr::&calculate_frame_psnr(&frame1_info, &frame2_info));
+        Some(psnr::calculate_frame_psnr(&frame1_info, &frame2_info));
       metrics
     }
     MetricsEnabled::All => {
       let mut metrics = QualityMetrics::default();
       metrics.psnr =
-        Some(psnr::&calculate_frame_psnr(&frame1_info, &frame2_info));
-      metrics.psnr_hvs = Some(&psnr_hvs::calculate_frame_psnr_hvs(
+        Some(psnr::calculate_frame_psnr(&frame1_info, &frame2_info));
+      metrics.psnr_hvs = Some(psnr_hvs::calculate_frame_psnr_hvs(
         &frame1_info, &frame2_info
       ));
-      let ssim = ssim::calculate_frame_ssim(frame1_info, frame2_info);
+      let ssim = ssim::calculate_frame_ssim(&frame1_info, &frame2_info);
       metrics.ssim = Some(ssim);
       let ms_ssim =
         ssim::calculate_frame_msssim(&frame1_info, &frame2_info);
       metrics.ms_ssim = Some(ms_ssim);
       let ciede = ciede::calculate_frame_ciede(&frame1_info, &frame2_info);
-      metrics.ciede = &Some(ciede);
+      metrics.ciede = Some(ciede);
       metrics
     }
   }

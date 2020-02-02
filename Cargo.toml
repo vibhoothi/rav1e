@@ -79,6 +79,7 @@ console = { version = "0.9", optional = true }
 fern = { version = "0.5", optional = true }
 itertools = "0.8"
 simd_helpers = "0.1"
+v_frame = { version= "0.1", path="v_frame/"}
 
 [dependencies.image]
 version = "0.22.1"
@@ -149,7 +150,7 @@ codegen-units = 1
 lto = true
 
 [workspace]
-members = [".", "ivf"]
+members = [".", "ivf","v_frame"]
 
 [package.metadata.docs.rs]
 no-default-features = true

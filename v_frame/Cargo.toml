@@ -1,0 +1,12 @@
+[package]
+name = "v_frame"
+version = "0.1.0"
+authors = ["Vibhoothi <vibhoothiiaanand@gmail.com>"]
+edition = "2018"
+include = [
+    "/src/**"
+]
+
+[dependencies]
+num-derive = "0.3"
+num-traits = "0.2"

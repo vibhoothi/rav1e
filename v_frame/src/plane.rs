@@ -15,7 +15,6 @@ use std::mem;
 use std::ops::{Index, IndexMut, Range};
 use crate::pixel::Pixel;
 use crate::pixel::CastFromPrimitive;
-use crate::tile::{Area,PlaneRegion, PlaneRegionMut};
 use crate::math::*;
 
 /// Plane-specific configuration.
@@ -198,47 +197,6 @@ where
   }
 }
 
-pub trait AsRegion<T: Pixel> {
-  fn as_region(&self) -> PlaneRegion<'_, T>;
-  fn as_region_mut(&mut self) -> PlaneRegionMut<'_, T>;
-  fn region_mut(&mut self, area: Area) -> PlaneRegionMut<'_, T>;
-  fn region(&self, area: Area) -> PlaneRegion<'_, T>;
-}
-
-impl<T: Pixel> AsRegion<T> for Plane<T> {
-  #[inline(always)]
-  fn region(&self, area: Area) -> PlaneRegion<'_, T> {
-    let rect = area.to_rect(
-      self.cfg.xdec,
-      self.cfg.ydec,
-      self.cfg.stride - self.cfg.xorigin as usize,
-      self.cfg.alloc_height - self.cfg.yorigin as usize,
-    );
-    PlaneRegion::new(self, rect)
-  }
-
-  #[inline(always)]
-  fn region_mut(&mut self, area: Area) -> PlaneRegionMut<'_, T> {
-    let rect = area.to_rect(
-      self.cfg.xdec,
-      self.cfg.ydec,
-      self.cfg.stride - self.cfg.xorigin as usize,
-      self.cfg.alloc_height - self.cfg.yorigin as usize,
-    );
-    PlaneRegionMut::new(self, rect)
-  }
-
-  #[inline(always)]
-  fn as_region(&self) -> PlaneRegion<'_, T> {
-    self.region(Area::StartingAt { x: 0, y: 0 })
-  }
-
-  #[inline(always)]
-  fn as_region_mut(&mut self) -> PlaneRegionMut<'_, T> {
-    self.region_mut(Area::StartingAt { x: 0, y: 0 })
-  }
-}
-
 impl<T: Pixel> Plane<T> {
   /// Allocates and returns a new plane.
   pub fn new(
@@ -346,14 +304,6 @@ impl<T: Pixel> Plane<T> {
         dst.copy_from_slice(src);
       }
     }
-  }
-
-  pub(crate) fn slice(&self, po: PlaneOffset) -> PlaneSlice<'_, T> {
-    PlaneSlice { plane: self, x: po.x, y: po.y }
-  }
-
-  pub(crate) fn mut_slice(&mut self, po: PlaneOffset) -> PlaneMutSlice<'_, T> {
-    PlaneMutSlice { plane: self, x: po.x, y: po.y }
   }
 
   #[cfg(test)]
@@ -477,10 +427,6 @@ impl<T: Pixel> Plane<T> {
   /// Iterates over the pixels in the plane, skipping the padding.
   pub fn iter(&self) -> PlaneIter<'_, T> {
     PlaneIter::new(self)
-  }
-
-  pub(crate) fn rows_iter(&self) -> RowsIter<'_, T> {
-    RowsIter { plane: self, x: 0, y: 0 }
   }
 }
 

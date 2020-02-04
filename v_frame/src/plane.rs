@@ -15,6 +15,7 @@ use std::mem;
 use std::ops::{Index, IndexMut, Range};
 use crate::pixel::Pixel;
 use crate::pixel::CastFromPrimitive;
+use crate::tile::{Area,PlaneRegion, PlaneRegionMut};
 use crate::math::*;
 
 /// Plane-specific configuration.

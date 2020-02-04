@@ -24,6 +24,9 @@ pub use pixel::*;
 mod math;
 pub use math::*;
 
+mod tile;
+pub use tile::*;
+
 use crate::pixel::Pixel;
 use crate::plane::Plane;
 

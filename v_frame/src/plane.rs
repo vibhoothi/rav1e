@@ -217,25 +217,6 @@ impl<T: Pixel> Plane<T> {
     Plane { data, cfg }
   }
 
-  /// Allocates and returns an uninitialized plane.
-  unsafe fn new_uninitialized(
-    width: usize, height: usize, xdec: usize, ydec: usize, xpad: usize,
-    ypad: usize,
-  ) -> Self {
-    let cfg = PlaneConfig::new(
-      width,
-      height,
-      xdec,
-      ydec,
-      xpad,
-      ypad,
-      mem::size_of::<T>(),
-    );
-    let data = PlaneData::new_uninitialized(cfg.stride * cfg.alloc_height);
-
-    Plane { data, cfg }
-  }
-
   #[cfg(any(test, feature = "bench"))]
   pub fn wrap(data: Vec<T>, stride: usize) -> Self {
     let len = data.len();
@@ -257,58 +238,6 @@ impl<T: Pixel> Plane<T> {
         yorigin: 0,
       },
     }
-  }
-
-  pub(crate) fn pad(&mut self, w: usize, h: usize) {
-    let xorigin = self.cfg.xorigin;
-    let yorigin = self.cfg.yorigin;
-    let stride = self.cfg.stride;
-    let alloc_height = self.cfg.alloc_height;
-    let width = (w + self.cfg.xdec) >> self.cfg.xdec;
-    let height = (h + self.cfg.ydec) >> self.cfg.ydec;
-
-    if xorigin > 0 {
-      for y in 0..height {
-        let base = (yorigin + y) * stride;
-        let fill_val = self.data[base + xorigin];
-        for val in &mut self.data[base..base + xorigin] {
-          *val = fill_val;
-        }
-      }
-    }
-
-    if xorigin + width < stride {
-      for y in 0..height {
-        let base = (yorigin + y) * stride + xorigin + width;
-        let fill_val = self.data[base - 1];
-        for val in &mut self.data[base..base + stride - (xorigin + width)] {
-          *val = fill_val;
-        }
-      }
-    }
-
-    if yorigin > 0 {
-      let (top, bottom) = self.data.split_at_mut(yorigin * stride);
-      let src = &bottom[..stride];
-      for y in 0..yorigin {
-        let dst = &mut top[y * stride..(y + 1) * stride];
-        dst.copy_from_slice(src);
-      }
-    }
-
-    if yorigin + height < self.cfg.alloc_height {
-      let (top, bottom) = self.data.split_at_mut((yorigin + height) * stride);
-      let src = &top[(yorigin + height - 1) * stride..];
-      for y in 0..alloc_height - (yorigin + height) {
-        let dst = &mut bottom[y * stride..(y + 1) * stride];
-        dst.copy_from_slice(src);
-      }
-    }
-  }
-
-  #[cfg(test)]
-  pub(crate) fn as_mut_slice(&mut self) -> PlaneMutSlice<'_, T> {
-    self.mut_slice(PlaneOffset { x: 0, y: 0 })
   }
 
   #[inline]
@@ -381,48 +310,6 @@ impl<T: Pixel> Plane<T> {
     }
   }
 
-  pub fn downsampled(
-    &self, frame_width: usize, frame_height: usize,
-  ) -> Plane<T> {
-    let src = self;
-    // unsafe: all pixels initialized in this function
-    let mut new = unsafe {
-      Plane::new_uninitialized(
-        src.cfg.width / 2,
-        src.cfg.height / 2,
-        src.cfg.xdec + 1,
-        src.cfg.ydec + 1,
-        src.cfg.xpad / 2,
-        src.cfg.ypad / 2,
-      )
-    };
-
-    let width = new.cfg.width;
-    let height = new.cfg.height;
-    let xorigin = new.cfg.xorigin;
-    let yorigin = new.cfg.yorigin;
-    let stride = new.cfg.stride;
-
-    assert!(width * 2 == src.cfg.width);
-    assert!(height * 2 == src.cfg.height);
-
-    for row in 0..height {
-      let base = (yorigin + row) * stride + xorigin;
-      let dst = &mut new.data[base..base + width];
-
-      for col in 0..width {
-        let mut sum = 0;
-        sum += u32::cast_from(src.p(2 * col, 2 * row));
-        sum += u32::cast_from(src.p(2 * col + 1, 2 * row));
-        sum += u32::cast_from(src.p(2 * col, 2 * row + 1));
-        sum += u32::cast_from(src.p(2 * col + 1, 2 * row + 1));
-        let avg = (sum + 2) >> 2;
-        dst[col] = T::cast_from(avg);
-      }
-    }
-    new.pad(frame_width, frame_height);
-    new
-  }
 
   /// Iterates over the pixels in the plane, skipping the padding.
   pub fn iter(&self) -> PlaneIter<'_, T> {
@@ -688,97 +575,5 @@ pub mod test {
 
     assert_eq!(&input[..64], &plane.data[..64]);
   }
-
-  #[test]
-  fn test_plane_downsample() {
-    #[rustfmt::skip]
-    let plane = Plane::<u8> {
-      data: PlaneData::from_slice(&[
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 1, 2, 3, 4, 0, 0,
-        0, 0, 8, 7, 6, 5, 0, 0,
-        0, 0, 9, 8, 7, 6, 0, 0,
-        0, 0, 2, 3, 4, 5, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-      ]),
-      cfg: PlaneConfig {
-        stride: 8,
-        alloc_height: 9,
-        width: 4,
-        height: 4,
-        xdec: 0,
-        ydec: 0,
-        xpad: 0,
-        ypad: 0,
-        xorigin: 2,
-        yorigin: 3,
-      },
-    };
-    let downsampled = plane.downsampled(4, 4);
-
-    #[rustfmt::skip]
-    assert_eq!(
-      &[
-        5, 5, 5, 5, 5, 5, 5, 5,
-        5, 5, 5, 5, 5, 5, 5, 5,
-        5, 5, 5, 5, 5, 5, 5, 5,
-        5, 5, 5, 5, 5, 5, 5, 5,
-        6, 6, 6, 6, 6, 6, 6, 6,
-        6, 6, 6, 6, 6, 6, 6, 6,
-        6, 6, 6, 6, 6, 6, 6, 6,
-        6, 6, 6, 6, 6, 6, 6, 6,
-      ][..],
-      &downsampled.data[..]
-    );
-  }
-
-  #[test]
-  fn test_plane_pad() {
-    #[rustfmt::skip]
-    let mut plane = Plane::<u8> {
-      data: PlaneData::from_slice(&[
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 1, 2, 3, 4, 0, 0,
-        0, 0, 8, 7, 6, 5, 0, 0,
-        0, 0, 9, 8, 7, 6, 0, 0,
-        0, 0, 2, 3, 4, 5, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0,
-      ]),
-      cfg: PlaneConfig {
-        stride: 8,
-        alloc_height: 9,
-        width: 4,
-        height: 4,
-        xdec: 0,
-        ydec: 0,
-        xpad: 0,
-        ypad: 0,
-        xorigin: 2,
-        yorigin: 3,
-      },
-    };
-    plane.pad(4, 4);
-
-    #[rustfmt::skip]
-    assert_eq!(
-      &[
-        1, 1, 1, 2, 3, 4, 4, 4,
-        1, 1, 1, 2, 3, 4, 4, 4,
-        1, 1, 1, 2, 3, 4, 4, 4,
-        1, 1, 1, 2, 3, 4, 4, 4,
-        8, 8, 8, 7, 6, 5, 5, 5,
-        9, 9, 9, 8, 7, 6, 6, 6,
-        2, 2, 2, 3, 4, 5, 5, 5,
-        2, 2, 2, 3, 4, 5, 5, 5,
-        2, 2, 2, 3, 4, 5, 5, 5,
-      ][..],
-      &plane.data[..]
-    );
-  }
 }
+

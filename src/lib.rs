@@ -127,7 +127,7 @@ mod frame;
 mod header;
 
 use crate::encoder::*;
-
+extern crate v_frame;
 pub use crate::api::{Config, Context, EncoderStatus, InvalidConfig, Packet};
 pub use crate::frame::Frame;
 pub use crate::util::{CastFromPrimitive, Pixel, PixelType};
@@ -139,8 +139,10 @@ pub mod prelude {
   pub use crate::frame::Frame;
   pub use crate::frame::FrameParameters;
   pub use crate::frame::FrameTypeOverride;
-  pub use crate::frame::Plane;
-  pub use crate::frame::PlaneConfig;
+  pub use crate::v_frame::Plane;
+  pub use crate::v_frame::PlaneConfig;
+  //pub use crate::frame::Plane;
+  //pub use crate::frame::PlaneConfig;
   pub use crate::partition::BlockSize;
   pub use crate::predict::PredictionMode;
   pub use crate::transform::TxType;

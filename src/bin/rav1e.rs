@@ -39,13 +39,12 @@ mod muxer;
 mod stats;
 
 use crate::common::*;
-use crate::error::*;
-use crate::stats::*;
-use rav1e::prelude::*;
-
 use crate::decoder::Decoder;
 use crate::decoder::VideoDetails;
+use crate::error::*;
 use crate::muxer::*;
+use crate::stats::*;
+use rav1e::prelude::*;
 use std::fs::File;
 use std::io::Read;
 use std::io::Seek;
@@ -100,6 +99,7 @@ fn process_frame<T: Pixel, D: Decoder>(
   pass1file: Option<&mut File>, pass2file: Option<&mut File>,
   buffer: &mut [u8], buf_pos: &mut usize,
   mut y4m_enc: Option<&mut y4m::Encoder<'_, Box<dyn Write>>>,
+  metrics_cli: MetricsEnabled,
 ) -> Result<Option<Vec<FrameSummary>>, CliError> {
   let y4m_details = source.input.get_video_details();
   let mut frame_summaries = Vec::new();
@@ -189,7 +189,12 @@ fn process_frame<T: Pixel, D: Decoder>(
     }
     Err(EncoderStatus::Encoded) => {}
   }
-  Ok(Some(frame_summaries))
+  build_frame_summary(
+    pkt_wrapped.unwrap(),
+    y4m_details.bit_depth,
+    y4m_details.chroma_sampling,
+    metrics_cli,
+   )
 }
 
 fn do_encode<T: Pixel, D: Decoder>(
@@ -214,7 +219,7 @@ fn do_encode<T: Pixel, D: Decoder>(
 
   let mut buffer: [u8; 80] = [0; 80];
   let mut buf_pos = 0;
-
+  let metrics_cli = parse_cli().unwrap().metrics_enabled;
   while let Some(frame_info) = process_frame(
     &mut ctx,
     &mut *output,
@@ -224,6 +229,7 @@ fn do_encode<T: Pixel, D: Decoder>(
     &mut buffer,
     &mut buf_pos,
     y4m_enc.as_mut(),
+    metrics_cli,
   )? {
     if verbose != Verbose::Quiet {
       for frame in frame_info {
@@ -419,7 +425,7 @@ fn run() -> Result<(), error::CliError> {
   let progress = ProgressInfo::new(
     Rational { num: video_info.time_base.den, den: video_info.time_base.num },
     if cli.limit == 0 { None } else { Some(cli.limit) },
-    cfg.enc.show_psnr,
+    cli.metrics_enabled,
   );
 
   for _ in 0..cli.skip {

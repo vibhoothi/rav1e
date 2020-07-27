@@ -198,7 +198,7 @@ impl EncoderConfig {
     // multiple partition sizes properly. Unfortunately, when tx domain
     // distortion is used, distortion is only known at the tx block level which
     // might be bigger than 8x8. So temporal RDO is always disabled in that case.
-    !self.speed_settings.tx_domain_distortion
+    false
   }
 }
 

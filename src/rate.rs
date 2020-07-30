@@ -70,17 +70,17 @@ const MQP_Q12: &[i32; FRAME_NSUBTYPES] = &[
 
 // To-do: Add documentaiton after debugging
 // DQP_Q57[i] = log_2(sqrt(w_1/w_i))*(1 << 57)
-// 0                       5.703454 [Negetive]
-// 1                       3.839057 [Zero]
-// 2                       1.700646 [Positve]
-// 3                       1.210318 [Postive]
+// 0                       2.696150 [Negetive]
+// 1                       2.031023 [Zero]
+// 2                       1.114879 [Positve]
+// 3                       0.864990 [Postive]
 
 pub fn calc_dqp_q57(temp_dqp57: usize) -> i64 {
   const MEAN_DW: &[f64; FRAME_NSUBTYPES] = &[
-    (5.703454 as f64),
-    (3.839057 as f64),
-    (1.700646 as f64),
-    (1.210318 as f64),
+    (2.696150 as f64),
+    (2.031023 as f64),
+    (1.114879 as f64),
+    (0.864990 as f64),
   ];
   // To-do: Return directly after debugging
   let dummy = ((MEAN_DW[1] / MEAN_DW[temp_dqp57]).sqrt().log2()

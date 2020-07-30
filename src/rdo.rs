@@ -493,8 +493,8 @@ pub fn distortion_scale_for(
     return DistortionScale::default(); // no scaling
   }
 
-  let strength1 = 0.5;
-let strength2 = 2.00;
+let strength1 = 0.75;
+let strength2 = 1.50;
   let frac = (intra_cost + propagate_cost) / intra_cost;
   DistortionScale::new(strength1 * frac.powf(strength2 / 3.0))
 }

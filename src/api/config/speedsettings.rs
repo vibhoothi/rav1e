@@ -185,7 +185,7 @@ impl SpeedSettings {
   /// backwards references. low_latency false enables both forward and
   /// backwards references.
   const fn multiref_preset(speed: usize) -> bool {
-    speed <= 7
+    false
   }
 
   const fn fast_deblock_preset(speed: usize) -> bool {

@@ -68,17 +68,10 @@ const MQP_Q12: &[i32; FRAME_NSUBTYPES] = &[
   (1.0 * (1 << 12) as f64) as i32,
 ];
 
-// To-do: Add documentaiton after debugging
-// DQP_Q57[i] = log_2(sqrt(w_1/w_i))*(1 << 57)
-// 0                       8.968486 [Negetive]
-// 1                       4.932708 [Zero]
-// 2                       2.085997 [Positve]
-// 3                       1.302035 [Postive]
-
 pub fn calc_dqp_q57(temp_dqp57: usize) -> i64 {
   const MEAN_DW: &[f64; FRAME_NSUBTYPES] = &[
-    ( 8.968486 as f64),
-    ( 4.932708 as f64),
+    (10.470744 as f64),
+    ( 6.064646 as f64),
     ( 2.085997 as f64),
     ( 1.302035 as f64),
   ];

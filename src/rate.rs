@@ -70,10 +70,10 @@ const MQP_Q12: &[i32; FRAME_NSUBTYPES] = &[
 
 pub fn calc_dqp_q57(temp_dqp57: usize) -> i64 {
   const MEAN_DW: &[f64; FRAME_NSUBTYPES] = &[
-    (19.576028 as f64),
-    ( 9.534591 as f64),
-    ( 2.394207 as f64),
-    ( 1.367666 as f64),
+    (29.103670 as f64),
+    (13.994632 as f64),
+    ( 2.614513 as f64),
+    ( 1.409243 as f64),
   ];
   // To-do: Return directly after debugging
   let dummy = ((MEAN_DW[1] / MEAN_DW[temp_dqp57]).sqrt().log2()

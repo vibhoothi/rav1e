@@ -14,7 +14,7 @@ import requests
 # our timestamping function, accurate to milliseconds
 # (remove [:-3] to display microseconds)
 def GetTime():
-    return datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")[:-3]
+    return datetime.now().strftime("%Y-%m-%dT%H:%M")
 
 
 if "check_output" not in dir(subprocess):  # duck punch it in!
@@ -55,6 +55,7 @@ parser = argparse.ArgumentParser(
     description="Submit test to arewecompressedyet.com"
 )
 parser.add_argument("-branch", default=None)
+parser.add_argument("-commit",default=None)
 parser.add_argument("-prefix", default=None)
 parser.add_argument("-master", action="store_true", default=False)
 parser.add_argument("-set", default="objective-1-fast")
@@ -78,23 +79,25 @@ if args.branch is None:
 if args.prefix is None:
     args.prefix = args.branch
 
-commit = subprocess.check_output("git rev-parse HEAD", shell=True).strip()
-short = (
-    subprocess.check_output("git rev-parse --short HEAD", shell=True)
-    .strip()
-    .decode("utf-8")
-)
+if args.commit is None:
+    commit = subprocess.check_output("git rev-parse HEAD", shell=True).strip()
+    short = (
+        subprocess.check_output("git rev-parse --short HEAD", shell=True)
+        .strip()
+        .decode("utf-8")
+    )
 date = GetTime().strip()
-date_short = (
-    date.split()[0] + "_" + date.split()[1].split(".")[0].replace(":", "")
-)
+print(date)
+#date_short = (
+#    date.split()[0] + "_" + date.split()[1].split(".")[0].replace(":", "")
+#)
 prefix = args.prefix
 is_master = args.master
-run_id = prefix + "-" + date_short + "-" + short
+run_id = prefix + "-" + date + "-" + args.commit
 
 params = {
     "run_id": run_id,
-    "commit": commit,
+    "commit": args.commit,
     "master": is_master,
     "key": key,
     "task": args.set,
@@ -103,6 +106,7 @@ params = {
     "extra_options": args.extra_options,
 }
 
+print(params)
 if args.qualities is not None:
     params["qualities"] = " ".join(map(str, args.qualities))
 

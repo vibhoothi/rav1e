@@ -70,8 +70,8 @@ const MQP_Q12: &[i32; FRAME_NSUBTYPES] = &[
 
 pub fn calc_dqp_q57(temp_dqp57: usize) -> i64 {
   const MEAN_DW: &[f64; FRAME_NSUBTYPES] = &[
-    (13.086867 as f64),
-    ( 9.375146 as f64),
+    (13.280311 as f64),
+    (11.231485 as f64),
     ( 2.085997 as f64),
     ( 1.302035 as f64),
   ];

@@ -34,7 +34,9 @@ from PIL import Image, ImageDraw
 @click.option(
     "--csv", type=str, help="Export as frame_type, importance as CSV."
 )
-def blockImportance(input, verbose, path, figure, raw, csv):
+@click.option('--out', type = str, help="Extract to this directory")
+
+def blockImportance(input, verbose, path, figure, raw, csv, out):
     """
     CLI tool for extracting rav1e's Block Importance
 
@@ -53,7 +55,11 @@ def blockImportance(input, verbose, path, figure, raw, csv):
     Note: CSV Mode only available for Batch mode.
     """
 
-    folder_path = "out/" + datetime.datetime.now().strftime("%Y%m%d_%H")
+    if out is None:
+        folder_path = "out/"+ datetime.datetime.now().strftime('%Y%m%d_%H')
+    else:
+        folder_path = out
+
     if figure or csv:
         if not os.path.exists("out"):
             os.mkdir("out")

@@ -720,6 +720,7 @@ impl QuantizerParameters {
     let lambda_v = (::std::f64::consts::LN_2 / 6.0)
       * ((log_target_q_v as f64) * Q57_SQUARE_EXP_SCALE).exp();
 
+    let dist_scale = [1.0, lambda / lambda_u, lambda / lambda_v];
     let base_q_idx = select_ac_qi(quantizer, bit_depth).max(1);
 
     // delta_q only gets 6 bits + a sign bit, so it can differ by 63 at most.
@@ -742,7 +743,7 @@ impl QuantizerParameters {
         if mono { 0 } else { clamp_qi(select_ac_qi(quantizer_v, bit_depth)) },
       ],
       lambda,
-      dist_scale: [1.0, lambda / lambda_u, lambda / lambda_v],
+      dist_scale,
     }
   }
 }

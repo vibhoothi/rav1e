@@ -77,6 +77,55 @@ const DQP_Q57: &[i64; FRAME_NSUBTYPES] = &[
   (2.0 * (33_810_170.0 / 86_043_287.0) * (1i64 << 57) as f64) as i64,
 ];
 
+// For 8-bit-depth inter frames, 6 quantizers are derived from log_target_q
+//  with linear models: log_q_i = ADD + MUL * log_target_q.
+const Q_MODEL_ADD: [[[f64; 3]; 2]; 3] = [
+  // 4:2:0
+  [
+    // DC
+    [-0.11656242387547344, 1.0204689822943789, 0.6886094438200243],
+    // AC
+    [-0.11692591176935974, 1.0198189027518891, 0.6890266761982824],
+  ],
+  // 4:2:2
+  [
+    // DC
+    [-0.14394892466839426, 0.8159473007572995, 0.47871627350291224],
+    // AC
+    [-0.1443099499314302, 0.8143304669365223, 0.47843462255605296],
+  ],
+  // 4:4:4
+  [
+    // DC
+    [-0.22649962259502487, 0.5656726799733809, 0.22305586707855252],
+    // AC
+    [-0.22684363329351775, 0.5635050277164071, 0.22268207844634347],
+  ],
+];
+const Q_MODEL_MUL: [[[f64; 3]; 2]; 3] = [
+  // 4:2:0
+  [
+    // DC
+    [1.0331807205305543, 0.7598630717649668, 0.7591572564919543],
+    // AC
+    [1.033087726384096, 0.7599926596666513, 0.7590002362509559],
+  ],
+  // 4:2:2
+  [
+    // DC
+    [1.0332396344168826, 0.8475784581494014, 0.8476834789229545],
+    // AC
+    [1.0331466354360417, 0.8478359280824787, 0.8477755000169171],
+  ],
+  // 4:4:4
+  [
+    // DC
+    [1.0349179342200239, 0.9325424234409672, 0.9338268588837543],
+    // AC
+    [1.0348229113515812, 0.9328981675015446, 0.9337797953308268],
+  ],
+];
+
 // Convert an integer into a Q57 fixed-point fraction.
 // The integer must be in the range -64 to 63, inclusive.
 pub(crate) const fn q57(v: i32) -> i64 {
@@ -715,62 +764,39 @@ impl QuantizerParameters {
     let quantizer_v = bexp64(log_target_q_v + scale);
     let lambda = (::std::f64::consts::LN_2 / 6.0)
       * ((log_target_q as f64) * Q57_SQUARE_EXP_SCALE).exp();
-    let mut lambda_u = (::std::f64::consts::LN_2 / 6.0)
+    let lambda_u = (::std::f64::consts::LN_2 / 6.0)
       * ((log_target_q_u as f64) * Q57_SQUARE_EXP_SCALE).exp();
-    let mut lambda_v = (::std::f64::consts::LN_2 / 6.0)
+    let lambda_v = (::std::f64::consts::LN_2 / 6.0)
       * ((log_target_q_v as f64) * Q57_SQUARE_EXP_SCALE).exp();
 
-    let mut quantizer_y_dc = quantizer;
-    let mut quantizer_y_ac = quantizer;
-    let mut quantizer_u_dc = quantizer_u;
-    let mut quantizer_u_ac = quantizer_u;
-    let mut quantizer_v_dc = quantizer_v;
-    let mut quantizer_v_ac = quantizer_v;
-    let mut y_dist_scale = 1.0;
+    let mut dc_q = [quantizer, quantizer_u, quantizer_v];
+    let mut ac_q = dc_q;
+    let mut dist_scale = [1.0, lambda / lambda_u, lambda / lambda_v];
 
-    if !is_intra && bit_depth == 8 && chroma_sampling != ChromaSampling::Cs400 {
-      let log_q_bar = (log_target_q + scale) as f64 * (std::f64::consts::LN_2 / (1i64 << 57) as f64);
-      // println!("q_bar = {}, q_y_ac = {}", log_q_bar.exp().round(), ac_q(select_ac_qi(quantizer_y_ac, bit_depth).max(1), 0, bit_depth));
+    // Under correct conditions, derive quantizers using the linear models.
+    if !is_intra && bit_depth == 8 && chroma_sampling != ChromaSampling::Cs400
+    {
+      let log_q_bar = (log_target_q + scale) as f64
+        * (std::f64::consts::LN_2 / (1i64 << 57) as f64);
+      let q_bar = log_q_bar.exp();
 
-      // println!("before quantizer_y_dc = {}, quantizer_y_ac = {}", quantizer_y_dc, quantizer_y_ac);
+      let add = Q_MODEL_ADD[chroma_sampling as usize];
+      let mul = Q_MODEL_MUL[chroma_sampling as usize];
+      let quantizer = [&mut dc_q, &mut ac_q];
 
-      match chroma_sampling {
-        ChromaSampling::Cs420 => {
-          quantizer_y_dc = (-0.11656242387547344 + 1.0331807205305543 * log_q_bar).exp().round() as i64;
-          quantizer_y_ac = (-0.11692591176935974 + 1.033087726384096 * log_q_bar).exp().round() as i64;
-          quantizer_u_dc = (1.0204689822943789 + 0.7598630717649668 * log_q_bar).exp().round() as i64;
-          quantizer_u_ac = (1.0198189027518891 + 0.7599926596666513 * log_q_bar).exp().round() as i64;
-          quantizer_v_dc = (0.6886094438200243 + 0.7591572564919543 * log_q_bar).exp().round() as i64;
-          quantizer_v_ac = (0.6890266761982824 + 0.7590002362509559 * log_q_bar).exp().round() as i64;
-        },
-        ChromaSampling::Cs422 => {
-          quantizer_y_dc = (-0.14394892466839426 + 1.0332396344168826 * log_q_bar).exp().round() as i64;
-          quantizer_y_ac = (-0.1443099499314302 + 1.0331466354360417 * log_q_bar).exp().round() as i64;
-          quantizer_u_dc = (0.8159473007572995 + 0.8475784581494014 * log_q_bar).exp().round() as i64;
-          quantizer_u_ac = (0.8143304669365232 + 0.8478359280824785 * log_q_bar).exp().round() as i64;
-          quantizer_v_dc = (0.47871627350291224 + 0.8476834789229545 * log_q_bar).exp().round() as i64;
-          quantizer_v_ac = (0.47843462255605296 + 0.8477755000169171 * log_q_bar).exp().round() as i64;
-        },
-        ChromaSampling::Cs444 => {
-          quantizer_y_dc = (-0.22649962259502487 + 1.0349179342200239 * log_q_bar).exp().round() as i64;
-          quantizer_y_ac = (-0.22684363329351775 + 1.0348229113515812 * log_q_bar).exp().round() as i64;
-          quantizer_u_dc = (0.5656726799733809 + 0.9325424234409672 * log_q_bar).exp().round() as i64;
-          quantizer_u_ac = (0.5635050277164071 + 0.9328981675015446 * log_q_bar).exp().round() as i64;
-          quantizer_v_dc = (0.22305586707855252 + 0.9338268588837543 * log_q_bar).exp().round() as i64;
-          quantizer_v_ac = (0.22268207844634347 + 0.9337797953308268 * log_q_bar).exp().round() as i64;
+      for plane in 0..3 {
+        for q_type in 0..2 {
+          let q = add[q_type][plane] + mul[q_type][plane] * log_q_bar;
+          quantizer[q_type][plane] = q.exp().round() as i64;
         }
-        _ => unreachable!()
       }
 
-      // println!("after  quantizer_y_dc = {}, quantizer_y_ac = {}", quantizer_y_dc, quantizer_y_ac);
-
-      let q_bar = log_q_bar.exp();
-      y_dist_scale = (q_bar / quantizer_y_ac as f64).powi(2);
-      lambda_u = lambda / (q_bar / quantizer_u_ac as f64).powi(2);
-      lambda_v = lambda / (q_bar / quantizer_v_ac as f64).powi(2);
+      for plane in 0..3 {
+        dist_scale[plane] = (q_bar / ac_q[plane] as f64).powi(2);
+      }
     }
 
-    let base_q_idx = select_ac_qi(quantizer_y_ac, bit_depth).max(1);
+    let base_q_idx = select_ac_qi(ac_q[0], bit_depth).max(1);
 
     // delta_q only gets 6 bits + a sign bit, so it can differ by 63 at most.
     let min_qi = base_q_idx.saturating_sub(63).max(1);
@@ -782,17 +808,17 @@ impl QuantizerParameters {
       log_target_q,
       // TODO: Allow lossless mode; i.e. qi == 0.
       dc_qi: [
-        clamp_qi(select_dc_qi(quantizer_y_dc, bit_depth)),
-        if mono { 0 } else { clamp_qi(select_dc_qi(quantizer_u_dc, bit_depth)) },
-        if mono { 0 } else { clamp_qi(select_dc_qi(quantizer_v_dc, bit_depth)) },
+        clamp_qi(select_dc_qi(dc_q[0], bit_depth)),
+        if mono { 0 } else { clamp_qi(select_dc_qi(dc_q[1], bit_depth)) },
+        if mono { 0 } else { clamp_qi(select_dc_qi(dc_q[2], bit_depth)) },
       ],
       ac_qi: [
         base_q_idx,
-        if mono { 0 } else { clamp_qi(select_ac_qi(quantizer_u_ac, bit_depth)) },
-        if mono { 0 } else { clamp_qi(select_ac_qi(quantizer_v_ac, bit_depth)) },
+        if mono { 0 } else { clamp_qi(select_ac_qi(ac_q[1], bit_depth)) },
+        if mono { 0 } else { clamp_qi(select_ac_qi(ac_q[2], bit_depth)) },
       ],
       lambda,
-      dist_scale: [y_dist_scale, lambda / lambda_u, lambda / lambda_v],
+      dist_scale,
     }
   }
 }

@@ -50,7 +50,7 @@ pub fn call_inverse_hbd_func<T: Pixel>(
   output: &mut PlaneRegionMut<'_, T>, eob: usize, width: usize, height: usize,
   bd: usize,
 ) {
-  debug_assert!(bd == 8);
+  debug_assert!(bd >= 8);
 
   // Only use at most 32 columns and 32 rows of input coefficients.
   let input: &[T::Coeff] = &input[..width.min(32) * height.min(32)];

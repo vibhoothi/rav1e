@@ -25,7 +25,7 @@ pub fn inverse_transform_add<T: Pixel>(
       if let Some(func) = INV_TXFM_FNS[cpu.as_index()]
         [get_tx_size_idx(tx_size)][get_tx_type_idx(tx_type)]
       {
-        return call_inverse_func(
+        call_inverse_func(
           func,
           input,
           output,
@@ -36,24 +36,25 @@ pub fn inverse_transform_add<T: Pixel>(
         );
       }
     }
-    PixelType::U16 => {
+    PixelType::U16 if bd == 10 => {
       if let Some(func) = INV_TXFM_HBD_FNS[cpu.as_index()]
         [get_tx_size_idx(tx_size)][get_tx_type_idx(tx_type)]
       {
-        return call_inverse_hbd_func(
+        call_inverse_hbd_func(
           func,
           input,
           output,
           eob,
           tx_size.width(),
           tx_size.height(),
-          (1 << bd) - 1,
+          bd,
         );
       }
     }
+    _ => rust::inverse_transform_add(
+      input, output, eob, tx_size, tx_type, bd, cpu,
+    ),
   };
-
-  rust::inverse_transform_add(input, output, eob, tx_size, tx_type, bd, cpu);
 }
 
 macro_rules! decl_itx_fns {

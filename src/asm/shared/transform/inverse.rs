@@ -38,7 +38,7 @@ pub fn call_inverse_func<T: Pixel>(
   unsafe {
     func(
       output.data_ptr_mut() as *mut _,
-      output.plane_cfg.stride as isize,
+      T::to_asm_stride(output.plane_cfg.stride) as isize,
       copied.data.as_mut_ptr() as *mut _,
       eob as i32,
     );
@@ -67,7 +67,7 @@ pub fn call_inverse_hbd_func<T: Pixel>(
   unsafe {
     func(
       output.data_ptr_mut() as *mut _,
-      output.plane_cfg.stride as isize,
+      T::to_asm_stride(output.plane_cfg.stride) as isize,
       copied.data.as_mut_ptr() as *mut _,
       eob as i32,
     );

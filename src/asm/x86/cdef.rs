@@ -15,9 +15,9 @@ use crate::util::*;
 
 type CdefFilterFn = unsafe extern fn(
   dst: *mut u8,
-  dst_stride: isize,
-  tmp: *const u16,
-  tmp_stride: isize,
+  stride: isize,
+  left: *const u16,
+  top: *const [isize;2],
   pri_strength: i32,
   sec_strength: i32,
   dir: i32,
@@ -102,7 +102,7 @@ pub(crate) unsafe fn cdef_filter_block<T: Pixel>(
               dst.data_ptr_mut() as *mut _,
               T::to_asm_stride(dst.plane_cfg.stride),
               tmp.data.as_ptr().offset(3 * TMPSTRIDE) as *const u16,
-              TMPSTRIDE,
+              TMPSTRIDE as *const [isize; 2],
               pri_strength + 2i32,
               sec_strength + 2i32,
               dir as i32,
@@ -144,19 +144,24 @@ pub(crate) unsafe fn cdef_filter_block<T: Pixel>(
   }
 }
 
+/*
+void (name)(pixel *dst, ptrdiff_t stride, const_left_pixel_row_2px left, \
+            /*const*/ pixel *const top[2], int pri_strength, int sec_strength, \
+            int dir, int damping, enum CdefEdgeFlags edges HIGHBD_DECL_SUFFIX)
+*/
 extern {
   fn rav1e_cdef_filter_4x4_avx2(
-    dst: *mut u8, dst_stride: isize, tmp: *const u16, tmp_stride: isize,
+    dst: *mut u8, stride : isize, left: *const u16, top: *const [isize;2],
     pri_strength: i32, sec_strength: i32, dir: i32, damping: i32,
   );
 
   fn rav1e_cdef_filter_4x8_avx2(
-    dst: *mut u8, dst_stride: isize, tmp: *const u16, tmp_stride: isize,
+    dst: *mut u8, stride : isize, left: *const u16, top: *const [isize;2],
     pri_strength: i32, sec_strength: i32, dir: i32, damping: i32,
   );
 
   fn rav1e_cdef_filter_8x8_avx2(
-    dst: *mut u8, dst_stride: isize, tmp: *const u16, tmp_stride: isize,
+    dst: *mut u8, stride : isize, left: *const u16, top: *const [isize;2],
     pri_strength: i32, sec_strength: i32, dir: i32, damping: i32,
   );
 }

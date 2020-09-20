@@ -450,16 +450,20 @@ impl<T: Pixel> Plane<T> {
     assert!(width * 2 <= src.cfg.stride - src.cfg.xorigin);
     assert!(height * 2 <= src.cfg.alloc_height - src.cfg.yorigin);
 
+    let data = self.data_origin();
     for row in 0..height {
       let base = (yorigin + row) * stride + xorigin;
       let dst = &mut new.data[base..base + width];
 
+      let top_row = &data[((yorigin + row) * stride)..];
+      let bottom_row = &data[((yorigin + row + 1) * stride)..];
+
       for (col, dst) in dst.iter_mut().enumerate() {
         let mut sum = 0;
-        sum += u32::cast_from(src.p(2 * col, 2 * row));
-        sum += u32::cast_from(src.p(2 * col + 1, 2 * row));
-        sum += u32::cast_from(src.p(2 * col, 2 * row + 1));
-        sum += u32::cast_from(src.p(2 * col + 1, 2 * row + 1));
+        sum += u32::cast_from(top_row[col]);
+        sum += u32::cast_from(top_row[col + 1]);
+        sum += u32::cast_from(bottom_row[col]);
+        sum += u32::cast_from(bottom_row[col + 1]);
         let avg = (sum + 2) >> 2;
         *dst = T::cast_from(avg);
       }

@@ -1108,34 +1108,30 @@ fn wiener_stripe_filter<T: Pixel>(
   for xi in stripe_x..stripe_x + stripe_w {
     let n = cmp::min(7, crop_w as isize + 3 - xi as isize);
     for yi in stripe_y - 3..stripe_y + stripe_h as isize + 4 {
-      let src_plane: &Plane<T>;
       let mut acc = 0;
-      let ly;
-      if yi < stripe_y {
-        ly =
-          cmp::max(clamp(yi, 0, crop_h as isize - 1), stripe_y - 2) as usize;
-        src_plane = deblocked;
+      let src = if yi < stripe_y {
+        let ly = cmp::max(clamp(yi, 0, crop_h as isize - 1), stripe_y - 2);
+        deblocked.row(ly)
       } else if yi < stripe_y + stripe_h as isize {
-        ly = clamp(yi, 0, crop_h as isize - 1) as usize;
-        src_plane = cdeffed;
+        let ly = clamp(yi, 0, crop_h as isize - 1);
+        cdeffed.row(ly)
       } else {
-        ly = cmp::min(
+        let ly = cmp::min(
           clamp(yi, 0, crop_h as isize - 1),
           stripe_y + stripe_h as isize + 1,
-        ) as usize;
-        src_plane = deblocked;
-      }
+        );
+        deblocked.row(ly)
+      };
 
       for i in 0..3 - xi as isize {
-        acc += hfilter[i as usize] * i32::cast_from(src_plane.p(0, ly));
+        acc += hfilter[i as usize] * i32::cast_from(src[0]);
       }
       for i in cmp::max(0, 3 - (xi as isize))..n {
         acc += hfilter[i as usize]
-          * i32::cast_from(src_plane.p((xi as isize + i - 3) as usize, ly));
+          * i32::cast_from(src[(xi as isize + i - 3) as usize]);
       }
       for i in n..7 {
-        acc +=
-          hfilter[i as usize] * i32::cast_from(src_plane.p(crop_w - 1, ly));
+        acc += hfilter[i as usize] * i32::cast_from(src[crop_w - 1]);
       }
 
       acc = (acc + (1 << round_h >> 1)) >> round_h;

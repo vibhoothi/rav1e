@@ -370,11 +370,6 @@ impl<T: Pixel> Plane<T> {
     base..base + width
   }
 
-  /// Returns the pixel at the given coordinates.
-  pub fn p(&self, x: usize, y: usize) -> T {
-    self.data[self.index(x, y)]
-  }
-
   /// Returns plane data starting from the origin.
   pub fn data_origin(&self) -> &[T] {
     &self.data[self.index(0, 0)..]
@@ -479,28 +474,34 @@ impl<T: Pixel> Plane<T> {
   pub fn rows_iter(&self) -> RowsIter<'_, T> {
     RowsIter { plane: self, x: 0, y: 0 }
   }
+
+  /// Return a line
+  pub fn row(&self, y: isize) -> &[T] {
+    let range = self.row_range(0, y);
+
+    &self.data[range]
+  }
 }
 
 /// Iterator over plane pixels, skipping padding.
 #[derive(Debug)]
 pub struct PlaneIter<'a, T: Pixel> {
-  plane: &'a Plane<T>,
-  y: usize,
-  x: usize,
+  rows_iter: RowsIter<'a, T>,
+  line: Option<std::slice::Iter<'a, T>>,
 }
 
 impl<'a, T: Pixel> PlaneIter<'a, T> {
   /// Creates a new iterator.
   pub fn new(plane: &'a Plane<T>) -> Self {
-    Self { plane, y: 0, x: 0 }
+    let rows_iter = RowsIter { plane, x: 0, y: 0 };
+    Self { rows_iter, line: None }
   }
 
-  fn width(&self) -> usize {
-    self.plane.cfg.width
-  }
+  fn next_line(&mut self) -> Option<&mut std::slice::Iter<'a, T>> {
+    let w = self.rows_iter.plane.cfg.width;
+    self.line = self.rows_iter.next().map(|l| l[..w].iter());
 
-  fn height(&self) -> usize {
-    self.plane.cfg.height
+    self.line.as_mut()
   }
 }
 
@@ -508,17 +509,16 @@ impl<'a, T: Pixel> Iterator for PlaneIter<'a, T> {
   type Item = T;
 
   fn next(&mut self) -> Option<<Self as Iterator>::Item> {
-    if self.y == self.height() {
-      return None;
-    }
-    let pixel = self.plane.p(self.x, self.y);
-    if self.x == self.width() - 1 {
-      self.x = 0;
-      self.y += 1;
+    let line = if let Some(ref mut line) = self.line {
+      line
     } else {
-      self.x += 1;
-    }
-    Some(pixel)
+      self.next_line()?
+    };
+
+    let pixel = line.next();
+
+    if let Some(p) = pixel { Some(p) } else { self.next_line()?.next() }
+      .copied()
   }
 }
 
@@ -531,6 +531,7 @@ pub struct PlaneSlice<'a, T: Pixel> {
   pub y: isize,
 }
 
+#[derive(Debug)]
 pub struct RowsIter<'a, T: Pixel> {
   plane: &'a Plane<T>,
   x: isize,
@@ -874,6 +875,43 @@ pub mod test {
         2, 2, 2, 3, 4, 5, 5, 5,
       ][..],
       &plane.data[..]
+    );
+  }
+
+  #[test]
+  fn test_pixel_iterator() {
+    #[rustfmt::skip]
+    let plane = Plane::<u8> {
+      data: PlaneData::from_slice(&[
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 1, 2, 3, 4, 0, 0,
+        0, 0, 8, 7, 6, 5, 0, 0,
+        0, 0, 9, 8, 7, 6, 0, 0,
+        0, 0, 2, 3, 4, 5, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0, 0, 0,
+      ]),
+      cfg: PlaneConfig {
+        stride: 8,
+        alloc_height: 9,
+        width: 4,
+        height: 4,
+        xdec: 0,
+        ydec: 0,
+        xpad: 0,
+        ypad: 0,
+        xorigin: 2,
+        yorigin: 3,
+      },
+    };
+
+    let pixels: Vec<u8> = plane.iter().collect();
+
+    assert_eq!(
+      &[1, 2, 3, 4, 8, 7, 6, 5, 9, 8, 7, 6, 2, 3, 4, 5,][..],
+      &pixels[..]
     );
   }
 }

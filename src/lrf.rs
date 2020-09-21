@@ -252,8 +252,9 @@ pub(crate) mod rust {
   pub(crate) fn sgrproj_box_f_r0_internal<T: Pixel>(
     f: &mut [u32], start_x: usize, y: usize, w: usize, cdeffed: &PlaneSlice<T>,
   ) {
+    let line = cdeffed.row(y);
     for x in start_x..w {
-      f[x] = (u32::cast_from(cdeffed.p(x, y))) << SGRPROJ_RST_BITS;
+      f[x] = (u32::cast_from(line[x])) << SGRPROJ_RST_BITS;
     }
   }
 
@@ -270,6 +271,7 @@ pub(crate) mod rust {
     y: usize, w: usize, cdeffed: &PlaneSlice<T>,
   ) {
     let shift = 5 + SGRPROJ_SGR_BITS - SGRPROJ_RST_BITS;
+    let line = cdeffed.row(y);
     for x in start_x..w {
       let a = 3 * (af[0][x] + af[2][x] + af[0][x + 2] + af[2][x + 2])
         + 4
@@ -285,7 +287,7 @@ pub(crate) mod rust {
             + bf[1][x + 1]
             + bf[2][x + 1]
             + bf[1][x + 2]);
-      let v = a * u32::cast_from(cdeffed.p(x, y)) + b;
+      let v = a * u32::cast_from(line[x]) + b;
       f[x] = (v + (1 << shift >> 1)) >> shift;
     }
   }
@@ -304,14 +306,16 @@ pub(crate) mod rust {
   ) {
     let shift = 5 + SGRPROJ_SGR_BITS - SGRPROJ_RST_BITS;
     let shifto = 4 + SGRPROJ_SGR_BITS - SGRPROJ_RST_BITS;
+    let line = cdeffed.row(y);
+    let line1 = cdeffed.row(y + 1);
     for x in start_x..w {
       let a = 5 * (af[0][x] + af[0][x + 2]) + 6 * (af[0][x + 1]);
       let b = 5 * (bf[0][x] + bf[0][x + 2]) + 6 * (bf[0][x + 1]);
       let ao = 5 * (af[1][x] + af[1][x + 2]) + 6 * (af[1][x + 1]);
       let bo = 5 * (bf[1][x] + bf[1][x + 2]) + 6 * (bf[1][x + 1]);
-      let v = (a + ao) * u32::cast_from(cdeffed.p(x, y)) + b + bo;
+      let v = (a + ao) * u32::cast_from(line[x]) + b + bo;
       f0[x] = (v + (1 << shift >> 1)) >> shift;
-      let vo = ao * u32::cast_from(cdeffed.p(x, y + 1)) + bo;
+      let vo = ao * u32::cast_from(line1[x]) + bo;
       f1[x] = (vo + (1 << shifto >> 1)) >> shifto;
     }
   }

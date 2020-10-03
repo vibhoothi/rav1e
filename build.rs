@@ -139,6 +139,7 @@ fn build_asm_files() {
   config_file.sync_all().unwrap();
 
   let asm_files = &[
+    "src/arm/64/cdef.S",
     "src/arm/64/mc.S",
     "src/arm/64/mc16.S",
     "src/arm/64/itx.S",

@@ -179,12 +179,28 @@ extern {
 
 }
 
+#[no_mangle]
+pub(crate) unsafe extern fn rav1e_cdef_filter_4x4_neon(){
+    rav1e_cdef_filter4_neon;
+    rav1e_cdef_padding8_neon();
+}
+#[no_mangle]
+pub(crate) unsafe extern fn rav1e_cdef_filter_4x8_neon(){
+    Some(rav1e_cdef_filter4_neon);
+    Some(rav1e_cdef_padding8_neon);
+}
+#[no_mangle]
+pub(crate) unsafe extern fn rav1e_cdef_filter_8x8_neon(){
+    Some(rav1e_cdef_filter4_neon);
+    Some(rav1e_cdef_padding8_neon);
+}
+
 
 /*
 void (name)(pixel *dst, ptrdiff_t stride, const_left_pixel_row_2px left, \
             /*const*/ pixel *const top[2], int pri_strength, int sec_strength, \
             int dir, int damping, enum CdefEdgeFlags edges HIGHBD_DECL_SUFFIX)
-*/
+
 extern {
   fn rav1e_cdef_filter_4x4_neon(
     dst: *mut u8, stride : isize, left: *const u16, top: *const [isize;2],
@@ -201,12 +217,13 @@ extern {
     pri_strength: i32, sec_strength: i32, dir: i32, damping: i32,
   );
 }
+*/
 
 static CDEF_FILTER_FNS_NEON: [Option<CdefFilterFn>; 4] = {
   let mut out: [Option<CdefFilterFn>; 4] = [None; 4];
   out[decimate_index(1, 1)] = Some(rav1e_cdef_filter_4x4_neon);
-  out[decimate_index(1, 0)] = Some(rav1e_cdef_filter_4x8_neon);
-  out[decimate_index(0, 0)] = Some(rav1e_cdef_filter_4x8_neon);
+  out[decimate_index(1, 0)] = rav1e_cdef_filter_4x8_neon();
+  out[decimate_index(0, 0)] = rav1e_cdef_filter_4x8_neon();
   out
 };
 

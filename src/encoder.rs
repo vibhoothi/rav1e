@@ -299,9 +299,8 @@ impl Sequence {
       enable_warped_motion: false,
       enable_superres: false,
       enable_cdef: config.speed_settings.cdef && enable_restoration_filters,
-      enable_restoration: config.speed_settings.lrf
-        && enable_restoration_filters,
-      enable_large_lru: true,
+      enable_restoration: false,
+      enable_large_lru: false,
       enable_delayed_loopfilter_rdo: true,
       operating_points_cnt_minus_1: 0,
       operating_point_idc,

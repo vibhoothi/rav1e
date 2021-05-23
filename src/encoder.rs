@@ -298,7 +298,7 @@ impl Sequence {
       enable_ref_frame_mvs: false,
       enable_warped_motion: false,
       enable_superres: false,
-      enable_cdef: config.speed_settings.cdef && enable_restoration_filters,
+      enable_cdef: false,
       enable_restoration: config.speed_settings.lrf
         && enable_restoration_filters,
       enable_large_lru: true,

@@ -357,7 +357,7 @@ impl<T: Pixel> SceneChangeDetector<T> {
     // `0.4` was chosen based on trials of the `scenecut-720p` set in AWCY,
     // as it appeared to provide the best average compression.
     // This also matches the default scenecut threshold in x264.
-    const THRESH_MAX: f64 = 0.4;
+    const THRESH_MAX: f64 = 0.1818;
     const THRESH_MIN: f64 = THRESH_MAX * 0.25;
     let distance_from_keyframe = frameno - previous_keyframe;
     let min_keyint = self.encoder_config.min_key_frame_interval;
@@ -372,7 +372,7 @@ impl<T: Pixel> SceneChangeDetector<T> {
           * (distance_from_keyframe - min_keyint) as f64
           / (max_keyint - min_keyint) as f64
     };
-    let threshold = intra_cost * (1.0 - bias) / 2.2;
+    let threshold = intra_cost * (1.0 - bias);
 
     ScenecutResult { intra_cost, inter_cost, threshold }
   }

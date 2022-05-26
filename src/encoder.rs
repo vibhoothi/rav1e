@@ -2583,7 +2583,7 @@ fn encode_partition_bottomup<T: Pixel, W: Writer>(
   fi: &FrameInvariants<T>, ts: &mut TileStateMut<'_, T>,
   cw: &mut ContextWriter, w_pre_cdef: &mut W, w_post_cdef: &mut W,
   bsize: BlockSize, tile_bo: TileBlockOffset, ref_rd_cost: f64,
-  inter_cfg: &InterConfig,
+  inter_cfg: &InterConfig, this_counter: &mut i32
 ) -> PartitionGroupParameters {
   let rdo_type = RDOType::PixelDistRealRate;
   let mut rd_cost = std::f64::MAX;
@@ -2634,7 +2634,7 @@ fn encode_partition_bottomup<T: Pixel, W: Writer>(
       let w: &mut W = if cw.bc.cdef_coded { w_post_cdef } else { w_pre_cdef };
       let tell = w.tell_frac();
       cw.write_partition(w, tile_bo, PartitionType::PARTITION_NONE, bsize);
-      compute_rd_cost(fi, w.tell_frac() - tell, ScaledDistortion::zero())
+      compute_rd_cost(fi, w.tell_frac() - tell, ScaledDistortion::zero(), this_counter)
     } else {
       0.0
     };
@@ -2729,7 +2729,7 @@ fn encode_partition_bottomup<T: Pixel, W: Writer>(
         let tell = w.tell_frac();
         cw.write_partition(w, tile_bo, partition, bsize);
         rd_cost =
-          compute_rd_cost(fi, w.tell_frac() - tell, ScaledDistortion::zero());
+          compute_rd_cost(fi, w.tell_frac() - tell, ScaledDistortion::zero(), this_counter);
       }
 
       let four_partitions = [
@@ -2767,6 +2767,7 @@ fn encode_partition_bottomup<T: Pixel, W: Writer>(
           offset,
           best_rd,
           inter_cfg,
+          this_counter,
         );
         let cost = child_rdo_output.rd_cost;
         assert!(cost >= 0.0);
@@ -2786,7 +2787,25 @@ fn encode_partition_bottomup<T: Pixel, W: Writer>(
         }
       }
       // Try dumping each partition data here
-     // println!("\n Split:part_types, RDCOST is {:}, partition {:?}", rd_cost, partition);
+     // println!("\n Split:part_types, RDCOST is {:}, partition {:?}", rd_cost,
+     // partition);
+     #[cfg(feature = "dump_rdcost_frames")]
+     {
+     
+     let mut data_location = build_dump_properties();
+     let mut file_name = format!("{:}-{:010}-{:?}-fullsearch.png",this_counter, rd_cost,partition);
+     //println!("{:?}",file_name);
+     let this_plane = ts.rec.planes[0].scratch_copy();
+     let this_buf: Vec<_> = this_plane.iter().map(|p| p.as_()).collect();
+     image::GrayImage::from_vec(
+       this_plane.cfg.width as u32,
+       this_plane.cfg.height as u32,
+       this_buf,
+     )
+     .unwrap()
+     .save(data_location.join(file_name))
+     .unwrap();
+     }
       if !early_exit && rd_cost < best_rd {
         best_rd = rd_cost;
         best_partition = partition;
@@ -2844,6 +2863,23 @@ fn encode_partition_bottomup<T: Pixel, W: Writer>(
           true,
         );
       }
+      #[cfg(feature = "dump_rdcost_frames")]
+{
+
+let mut data_location = build_dump_properties();
+let mut file_name = format!("{:}-{:010}-{:?}-notsplit.png",this_counter, rd_cost,rdo_output.part_type);
+//println!("{:?}",file_name);
+let this_plane = ts.rec.planes[0].scratch_copy();
+let this_buf: Vec<_> = this_plane.iter().map(|p| p.as_()).collect();
+image::GrayImage::from_vec(
+  this_plane.cfg.width as u32,
+  this_plane.cfg.height as u32,
+  this_buf,
+)
+.unwrap()
+.save(data_location.join(file_name))
+.unwrap();
+}
     }
   /* 
     let frame_data = fi.coded_frame_data  self.frame_data.get(&output_frameno).unwrap();
@@ -2898,14 +2934,18 @@ let frame_from_tile  = Frame {
                   ts.rec.planes[1].scratch_copy(),
                   ts.rec.planes[2].scratch_copy(),]
                 };
+
  // Muxer::write_header(&mut self, width, height, framerate_num, framerate_den)
   //write_y4m_frame(y4m_enc, rec, y4m_details);
  // println!("\n end of split loop rdcost:{:},part: {:?}, bsize: {:?}, lambda: {:}", rd_cost, best_partition, bsize, fi.lambda );
  */
+
 #[cfg(feature = "dump_rdcost_frames")]
 {
-let data_location = build_dump_properties();
-let mut file_name = format!("{:010}-sb", rd_cost);
+
+let mut data_location = build_dump_properties();
+let mut file_name = format!("{:}-{:010}-{:?}-end.png",this_counter, rd_cost,rdo_output.part_type);
+//println!("{:?}",file_name);
 let this_plane = ts.rec.planes[0].scratch_copy();
 let this_buf: Vec<_> = this_plane.iter().map(|p| p.as_()).collect();
 image::GrayImage::from_vec(
@@ -2914,8 +2954,8 @@ image::GrayImage::from_vec(
   this_buf,
 )
 .unwrap()
-.save(data_location.join(file_name).with_extension("png"))
-      .unwrap();
+.save(data_location.join(file_name))
+.unwrap();
 }
 
   rdo_output.rd_cost = best_rd;
@@ -2924,6 +2964,7 @@ image::GrayImage::from_vec(
   if best_partition != PartitionType::PARTITION_NONE {
     rdo_output.part_modes.clear();
   }
+  *this_counter +=1;
   rdo_output
 }
 
@@ -3522,7 +3563,7 @@ fn encode_tile<'a, T: Pixel>(
         tile_bo.0.x + BlockSize::BLOCK_64X64.width_mi() > ts.mi_width;
       let is_straddle_sby =
         tile_bo.0.y + BlockSize::BLOCK_64X64.height_mi() > ts.mi_height;
-
+      let mut this_counter = 0;
       // Encode SuperBlock
       if fi.config.speed_settings.partition.encode_bottomup
         || is_straddle_sbx
@@ -3538,6 +3579,7 @@ fn encode_tile<'a, T: Pixel>(
           tile_bo,
           std::f64::MAX,
           inter_cfg,
+          &mut this_counter
         );
       } else {
         encode_partition_topdown(

@@ -664,9 +664,11 @@ impl std::ops::AddAssign for ScaledDistortion {
 }
 
 pub fn compute_rd_cost<T: Pixel>(
-  fi: &FrameInvariants<T>, rate: u32, distortion: ScaledDistortion,
+  fi: &FrameInvariants<T>, rate: u32, distortion: ScaledDistortion, this_temp_counter: &mut i32
 ) -> f64 {
   let rate_in_bits = (rate as f64) / ((1 << OD_BITRES) as f64);
+  let temp_rdcost = fi.lambda.mul_add(rate_in_bits, distortion.0 as f64);
+  println!("{:},{:},{:},{:},{:}", rate_in_bits, distortion.0, fi.lambda, temp_rdcost, this_temp_counter);
   fi.lambda.mul_add(rate_in_bits, distortion.0 as f64)
 }
 
@@ -867,7 +869,7 @@ fn luma_chroma_mode_rdo<T: Pixel>(
           compute_distortion(fi, ts, bsize, is_chroma_block, tile_bo, false)
         };
         let is_zero_dist = distortion.0 == 0;
-        let rd = compute_rd_cost(fi, rate, distortion);
+        let rd = compute_rd_cost(fi, rate, distortion,&mut 0);
         if rd < best.rd_cost {
           //if rd < best.rd_cost || luma_mode == PredictionMode::NEW_NEWMV {
           best.rd_cost = rd;
@@ -1025,7 +1027,7 @@ pub fn rdo_mode_decision<T: Pixel>(
         // For CFL, tx-domain distortion is not an option.
         let distortion =
           compute_distortion(fi, ts, bsize, is_chroma_block, tile_bo, false);
-        let rd = compute_rd_cost(fi, rate, distortion);
+        let rd = compute_rd_cost(fi, rate, distortion, &mut 0);
         if rd < best.rd_cost {
           best.rd_cost = rd;
           best.pred_mode_chroma = chroma_mode;
@@ -1733,7 +1735,7 @@ pub fn rdo_tx_type_decision<T: Pixel>(
     };
     cw.rollback(cw_checkpoint.as_ref().unwrap());
 
-    let rd = compute_rd_cost(fi, rate, distortion);
+    let rd = compute_rd_cost(fi, rate, distortion,&mut 0);
 
     if first_iteration {
       // We use an optimization to early exit after testing the first
@@ -1812,7 +1814,7 @@ fn rdo_partition_simple<T: Pixel, W: Writer>(
     let w: &mut W = if cw.bc.cdef_coded { w_post_cdef } else { w_pre_cdef };
     let tell = w.tell_frac();
     cw.write_partition(w, tile_bo, partition, bsize);
-    compute_rd_cost(fi, w.tell_frac() - tell, ScaledDistortion::zero())
+    compute_rd_cost(fi, w.tell_frac() - tell, ScaledDistortion::zero(),&mut 0)
   } else {
     0.0
   };
@@ -2465,7 +2467,7 @@ pub fn rdo_loop_decision<T: Pixel, W: Writer>(
               }
             }
 
-            let cost = compute_rd_cost(fi, rate, err);
+            let cost = compute_rd_cost(fi, rate, err, &mut 0);
             if best_cost < 0. || cost < best_cost {
               best_cost = cost;
               best_new_index = cdef_index as i8;
@@ -2575,7 +2577,7 @@ pub fn rdo_loop_decision<T: Pixel, W: Writer>(
                   pli,
                 );
 
-                let cost = compute_rd_cost(fi, rate, err);
+                let cost = compute_rd_cost(fi, rate, err, &mut 0);
                 // Was this choice actually an improvement?
                 if best_cost < 0. || cost < best_cost {
                   best_cost = cost;
@@ -2657,7 +2659,7 @@ pub fn rdo_loop_decision<T: Pixel, W: Writer>(
                   current_lrf,
                   pli,
                 );
-                let cost = compute_rd_cost(fi, rate, err);
+                let cost = compute_rd_cost(fi, rate, err, &mut 0);
                 if cost < best_cost {
                   best_cost = cost;
                   best_lrf_cost[lru_y * lru_w[pli] + lru_x][pli] = cost;

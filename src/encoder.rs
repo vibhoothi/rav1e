@@ -8,8 +8,11 @@
 // PATENTS file, you can obtain it at www.aomedia.org/license/patent.
 
 use crate::activity::*;
+use std::fs::File;
+
 #[cfg(feature = "unstable")]
 use crate::api::config::GrainTableParams;
+use crate::api::ChromaSamplePosition;
 use crate::api::*;
 use crate::cdef::*;
 use crate::context::*;
@@ -42,6 +45,7 @@ use crate::wasm_bindgen::*;
 use arg_enum_proc_macro::ArgEnum;
 use arrayvec::*;
 use bitstream_io::{BigEndian, BitWrite, BitWriter};
+use y4m::Colorspace;
 
 use std::collections::VecDeque;
 use std::io::Write;
@@ -51,6 +55,8 @@ use std::{fmt, io, mem};
 
 use crate::rayon::iter::*;
 use rust_hawktracer::*;
+
+use super::frame_dumper::*;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -2637,7 +2643,8 @@ fn encode_partition_bottomup<T: Pixel, W: Writer>(
     best_partition = PartitionType::PARTITION_NONE;
     best_rd = rd_cost;
     rdo_output.part_modes.push(mode_decision.clone());
-
+    // DUMP FIRST Time here.
+   // println!("\n Split:none_here, RDCOST is {:}, partition {:?}", rd_cost, best_partition);
     if !can_split {
       encode_block_with_modes(
         fi,
@@ -2763,7 +2770,8 @@ fn encode_partition_bottomup<T: Pixel, W: Writer>(
           }
         }
       }
-
+      // Try dumping each partition data here
+     // println!("\n Split:part_types, RDCOST is {:}, partition {:?}", rd_cost, partition);
       if !early_exit && rd_cost < best_rd {
         best_rd = rd_cost;
         best_partition = partition;
@@ -2780,6 +2788,7 @@ fn encode_partition_bottomup<T: Pixel, W: Writer>(
 
     // If the best partition is not PARTITION_SPLIT, recode it
     if best_partition != PartitionType::PARTITION_SPLIT {
+    //  println!("\n Inside if not split condition{:?}", rdo_output.part_modes);
       assert!(!rdo_output.part_modes.is_empty());
       cw.rollback(&cw_checkpoint);
       w_pre_cdef.rollback(&w_pre_checkpoint);
@@ -2821,6 +2830,15 @@ fn encode_partition_bottomup<T: Pixel, W: Writer>(
         );
       }
     }
+  /* 
+    let frame_data = fi.coded_frame_data  self.frame_data.get(&output_frameno).unwrap();
+    let frame_data =
+      self.frame_data.get_mut(&output_frameno).unwrap().as_mut().unwrap();
+    let fs = &mut frame_data.fs;
+    let fi = &mut frame_data.fi;
+    let coded_data = fi.coded_frame_data.as_mut().unwrap()
+    */
+
   } // if can_split {
 
   assert!(best_partition != PartitionType::PARTITION_INVALID);
@@ -2837,6 +2855,36 @@ fn encode_partition_bottomup<T: Pixel, W: Writer>(
     );
   }
 
+// TODO: Create file buffer here which has RDCOST in filename
+// Dump the data(frame_from_tile) to the file.
+let mut file_buffer = File::create("test_dump.y4m");
+let this_video_details = VideoDetails {
+  width: 100,
+  height: 100,
+  sample_aspect_ratio: Rational{num:16, den:9},
+  bit_depth: 8,
+  chroma_sampling: v_frame::pixel::ChromaSampling::Cs420,
+  chroma_sample_position: ChromaSamplePosition::Colocated,
+  time_base: Rational { num: 30, den: 1 },
+};
+
+let y4m_encode_instance = 
+y4m::encode(128, 128, y4m::Ratio::new(
+  1000, 1)).
+with_colorspace(y4m::Colorspace::C420).
+with_pixel_aspect(y4m::Ratio { 
+  num: 16, den:9
+}).write_header(file_buffer);
+
+let frame_from_tile  = Frame {
+                planes:
+                  [ts.rec.planes[0].scratch_copy(),
+                  ts.rec.planes[1].scratch_copy(),
+                  ts.rec.planes[2].scratch_copy(),]
+                };
+ // Muxer::write_header(&mut self, width, height, framerate_num, framerate_den)
+  //write_y4m_frame(y4m_enc, rec, y4m_details);
+ // println!("\n end of split loop rdcost:{:},part: {:?}, bsize: {:?}, lambda: {:}", rd_cost, best_partition, bsize, fi.lambda );
   rdo_output.rd_cost = best_rd;
   rdo_output.part_type = best_partition;
 
@@ -3471,7 +3519,8 @@ fn encode_tile<'a, T: Pixel>(
           inter_cfg,
         );
       }
-
+      // Post Superblock 
+      //println!("\n Active SB info, {:} {:} {:?} {:?}", ts.sb_height, ts.sb_width, cw.bc.blocks, sbs_qe.);
       {
         let mut check_queue = false;
         // queue our superblock for when the LRU is complete

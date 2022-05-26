@@ -260,6 +260,7 @@ mod rate;
 mod recon_intra;
 mod sad_plane;
 mod scan_order;
+mod frame_dumper;
 #[cfg(feature = "scenechange")]
 pub mod scenechange;
 #[cfg(not(feature = "scenechange"))]

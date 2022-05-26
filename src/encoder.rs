@@ -57,6 +57,9 @@ use crate::rayon::iter::*;
 use rust_hawktracer::*;
 
 use super::frame_dumper::*;
+use std::path::PathBuf;
+use std::env;
+use std::fs;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -69,6 +72,18 @@ pub enum CDEFSearchMethod {
 #[inline(always)]
 fn poly2(q: f32, a: f32, b: f32, c: f32, max: i32) -> i32 {
   clamp((q * q).mul_add(a, q.mul_add(b, c)).round() as i32, 0, max)
+}
+
+pub fn build_dump_properties() -> PathBuf {
+  let mut data_location = PathBuf::new();
+  if env::var_os("RAV1E_DATA_PATH").is_some() {
+    data_location.push(&env::var_os("RAV1E_DATA_PATH").unwrap());
+  } else {
+    data_location.push(&env::current_dir().unwrap());
+    data_location.push(".lookahead_data");
+  }
+  fs::create_dir_all(&data_location).unwrap();
+  data_location
 }
 
 pub static TEMPORAL_DELIMITER: [u8; 2] = [0x12, 0x00];
@@ -2857,6 +2872,7 @@ fn encode_partition_bottomup<T: Pixel, W: Writer>(
 
 // TODO: Create file buffer here which has RDCOST in filename
 // Dump the data(frame_from_tile) to the file.
+/* 
 let mut file_buffer = File::create("test_dump.y4m");
 let this_video_details = VideoDetails {
   width: 100,
@@ -2885,6 +2901,23 @@ let frame_from_tile  = Frame {
  // Muxer::write_header(&mut self, width, height, framerate_num, framerate_den)
   //write_y4m_frame(y4m_enc, rec, y4m_details);
  // println!("\n end of split loop rdcost:{:},part: {:?}, bsize: {:?}, lambda: {:}", rd_cost, best_partition, bsize, fi.lambda );
+ */
+#[cfg(feature = "dump_rdcost_frames")]
+{
+let data_location = build_dump_properties();
+let mut file_name = format!("{:010}-sb", rd_cost);
+let this_plane = ts.rec.planes[0].scratch_copy();
+let this_buf: Vec<_> = this_plane.iter().map(|p| p.as_()).collect();
+image::GrayImage::from_vec(
+  this_plane.cfg.width as u32,
+  this_plane.cfg.height as u32,
+  this_buf,
+)
+.unwrap()
+.save(data_location.join(file_name).with_extension("png"))
+      .unwrap();
+}
+
   rdo_output.rd_cost = best_rd;
   rdo_output.part_type = best_partition;
 

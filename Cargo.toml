@@ -59,6 +59,7 @@ wasm = ["wasm-bindgen"]
 # - i-mvs.bin: motion vectors,
 # - i-imps.bin: block importances.
 dump_lookahead_data = ["byteorder", "image"]
+dump_rdcost_frames = ["byteorder", "image"]
 
 [dependencies]
 arg_enum_proc_macro = "0.3"
